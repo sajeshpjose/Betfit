@@ -49,6 +49,11 @@ struct ProfileView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 12) {
+                        Text("Profile")
+                            .font(.system(size: 26, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
                         DarkProfileHero(name: name, handle: handle, company: company, totalSteps: totalSteps, challenges: challenges, streakDays: streakDays, selectedPhoto: $selectedPhoto, avatarImage: $avatarImage, onEditProfile: { showEditProfile = true })
                         DarkWeeklyChart(weeklySteps: weeklySteps, dailyGoal: 10000)
                         DarkBadgesCard(badges: badges)
@@ -62,9 +67,6 @@ struct ProfileView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Text("Profile").font(.system(size: 20, weight: .bold)).foregroundColor(.white)
-                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {}) {
                         Image(systemName: "gearshape").font(.system(size: 16)).foregroundColor(.white)

@@ -95,6 +95,16 @@ struct C25KView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 14) {
 
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Couch to 5K")
+                            .font(.system(size: 26, weight: .bold))
+                            .foregroundColor(.white)
+                        Text("Week 2 · Building your base")
+                            .font(.system(size: 13))
+                            .foregroundColor(.bfTextWeak)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
                     // ── Progress bar
                     ProgressSection(
                         currentDay: currentDay,
@@ -123,18 +133,6 @@ struct C25KView: View {
             }
             .background(Color.bfBg)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Couch to 5K")
-                            .font(.system(size: 22, weight: .bold))
-                            .foregroundColor(.bfBlack)
-                        Text("Week 2 · Building your base")
-                            .font(.system(size: 13))
-                            .foregroundColor(.bfTextWeak)
-                    }
-                }
-            }
         }
     }
 }

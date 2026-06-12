@@ -38,6 +38,17 @@ struct TeamView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Your Team")
+                                .font(.system(size: 26, weight: .bold))
+                                .foregroundColor(.white)
+                            HStack(spacing: 6) {
+                                Text(teamName).font(.system(size: 13, weight: .medium)).foregroundColor(.bfTextWeak)
+                                Text("✎ Edit").font(.system(size: 11)).foregroundColor(.bfTextMuted)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
                         // Rank banner
                         HStack(spacing: 12) {
                             Text("#\(rank)").font(.system(size: 32, weight: .bold)).foregroundColor(.black)
@@ -143,15 +154,6 @@ struct TeamView: View {
             .animation(.spring(response: 0.3), value: showCopiedToast)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Your Team").font(.system(size: 20, weight: .bold)).foregroundColor(.white)
-                        HStack(spacing: 6) {
-                            Text(teamName).font(.system(size: 13, weight: .medium)).foregroundColor(.bfTextWeak)
-                            Text("✎ Edit").font(.system(size: 11)).foregroundColor(.bfTextMuted)
-                        }
-                    }
-                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Text("\(daysLeft) days left").font(.system(size: 10, weight: .bold)).foregroundColor(.black)
                         .padding(.horizontal, 10).padding(.vertical, 5)

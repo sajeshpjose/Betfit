@@ -44,6 +44,14 @@ struct LeaderboardView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
+                        Text("Leaderboard")
+                            .font(.system(size: 26, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 4)
+                            .padding(.bottom, 8)
+
                         DarkPodiumView(teams: top3)
                             .padding(.bottom, 12)
 
@@ -73,9 +81,6 @@ struct LeaderboardView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Text("Leaderboard").font(.system(size: 20, weight: .bold)).foregroundColor(.white)
-                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Text("6 days left").font(.system(size: 10, weight: .bold)).foregroundColor(.black)
                         .padding(.horizontal, 10).padding(.vertical, 5)

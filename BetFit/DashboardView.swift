@@ -50,6 +50,11 @@ struct DashboardView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 12) {
 
+                        Text("BetFit")
+                            .font(.system(size: 26, weight: .bold))
+                            .foregroundColor(.bfPrimary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+
                         if let error = sync.errorMessage {
                             HStack(spacing: 8) {
                                 Image(systemName: "exclamationmark.triangle.fill").foregroundColor(.bfWarning)
@@ -88,9 +93,6 @@ struct DashboardView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Text("BetFit").font(.system(size: 22, weight: .bold)).foregroundColor(.bfPrimary)
-                }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { Task { await sync.syncToday(challengeId: challengeId) } }) {
                         Image(systemName: "arrow.clockwise")
