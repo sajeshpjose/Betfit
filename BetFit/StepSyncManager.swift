@@ -13,16 +13,43 @@ import Foundation
 import HealthKit
 import Combine
 
+// Flexible JSON value for decoding mixed Supabase response dictionaries
+enum JSONValue: Codable {
+    case string(String), int(Int), double(Double), bool(Bool), null
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.singleValueContainer()
+        if let v = try? c.decode(String.self)  { self = .string(v); return }
+        if let v = try? c.decode(Int.self)     { self = .int(v);    return }
+        if let v = try? c.decode(Double.self)  { self = .double(v); return }
+        if let v = try? c.decode(Bool.self)    { self = .bool(v);   return }
+        self = .null
+    }
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.singleValueContainer()
+        switch self {
+        case .string(let v): try c.encode(v)
+        case .int(let v):    try c.encode(v)
+        case .double(let v): try c.encode(v)
+        case .bool(let v):   try c.encode(v)
+        case .null:          try c.encodeNil()
+        }
+    }
+}
+
 @MainActor
 class StepSyncManager: ObservableObject {
 
     static let shared = StepSyncManager()
 
-    @Published var todaySteps: Int       = 0
+    @Published var todaySteps: Int         = 0
     @Published var todayDistanceKm: Double = 0.0
-    @Published var isSyncing: Bool       = false
-    @Published var lastSyncedAt: Date?   = nil
-    @Published var errorMessage: String? = nil
+    @Published var isSyncing: Bool         = false
+    @Published var lastSyncedAt: Date?     = nil
+    @Published var errorMessage: String?   = nil
+    @Published var weeklySteps: [(day: String, steps: Int)] = [
+        ("Mon",0),("Tue",0),("Wed",0),("Thu",0),("Fri",0),("Sat",0),("Sun",0)
+    ]
 
     private let store = HKHealthStore()
 
@@ -111,6 +138,56 @@ class StepSyncManager: ObservableObject {
         }
 
         lastSyncedAt = Date()
+    }
+
+    // ============================================================
+    // MARK: - 3b. Fetch Weekly Steps from Supabase
+    // Populates the weekly chart using stored step_logs
+    // ============================================================
+
+    func fetchWeeklySteps() async {
+        guard let userId = AuthManager.shared.userId else { return }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+
+        // Build list of last 7 days in order Mon→Sun (or today-6 → today)
+        let calendar = Calendar.current
+        let today = Date()
+        let dayAbbrevs = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]
+
+        do {
+            let sevenDaysAgo = calendar.date(byAdding: .day, value: -6, to: today)!
+            let fromStr = formatter.string(from: sevenDaysAgo)
+
+            let data = try await AuthManager.shared.get(
+                path: "step_logs?user_id=eq.\(userId)&log_date=gte.\(fromStr)&select=log_date,step_count&order=log_date.asc"
+            )
+            let logs = try JSONDecoder().decode([[String: JSONValue]].self, from: data)
+
+            // Map fetched rows into a date→steps dictionary
+            var stepsByDate: [String: Int] = [:]
+            for log in logs {
+                if case .string(let date) = log["log_date"],
+                   case .int(let steps)  = log["step_count"] {
+                    stepsByDate[date] = steps
+                }
+            }
+
+            // Build ordered 7-day array
+            var result: [(day: String, steps: Int)] = []
+            for daysAgo in (0..<7).reversed() {
+                let date = calendar.date(byAdding: .day, value: -daysAgo, to: today)!
+                let dateStr = formatter.string(from: date)
+                let weekday = calendar.component(.weekday, from: date) - 1
+                let steps = stepsByDate[dateStr] ?? 0
+                result.append((day: dayAbbrevs[weekday], steps: steps))
+            }
+            weeklySteps = result
+
+        } catch {
+            // Silently fail — weekly chart shows zeros until data is available
+        }
     }
 
     // ============================================================

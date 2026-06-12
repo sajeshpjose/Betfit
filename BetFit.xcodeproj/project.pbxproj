@@ -285,6 +285,7 @@
 				INFOPLIST_FILE = BetFit/Info.plist;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Betfit uses your step count and walking distance to track your progress in team competitions and your Couch to 5K program.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Betfit may write workout data to Apple Health when you complete a Couch to 5K session.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Betfit uses your photo library so you can set a profile picture.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -321,6 +322,7 @@
 				INFOPLIST_FILE = BetFit/Info.plist;
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "Betfit uses your step count and walking distance to track your progress in team competitions and your Couch to 5K program.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Betfit may write workout data to Apple Health when you complete a Couch to 5K session.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Betfit uses your photo library so you can set a profile picture.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

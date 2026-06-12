@@ -13,6 +13,7 @@
 import Foundation
 import Combine
 import UIKit
+import AuthenticationServices
 
 // ============================================================
 // MARK: - Config
@@ -56,7 +57,7 @@ struct BFSession: Codable {
 // ============================================================
 
 @MainActor
-final class AuthManager: ObservableObject {
+final class AuthManager: NSObject, ObservableObject, ASWebAuthenticationPresentationContextProviding {
 
     static let shared = AuthManager()
 
@@ -69,11 +70,13 @@ final class AuthManager: ObservableObject {
 
     private let tokenKey   = "bf_access_token"
     private let refreshKey = "bf_refresh_token"
+    private var webAuthSession: ASWebAuthenticationSession?
 
     var isSignedIn: Bool { user != nil }
     var userId: String? { user?.id.uuidString }
 
-    private init() {
+    override private init() {
+        super.init()
         Task { await restoreSession() }
     }
 
@@ -83,6 +86,7 @@ final class AuthManager: ObservableObject {
         if let token = UserDefaults.standard.string(forKey: tokenKey) {
             accessToken = token
             await fetchUser(token: token)
+            if user != nil { await ProfileManager.shared.load() }
         }
         isLoading = false
     }
@@ -107,24 +111,61 @@ final class AuthManager: ObservableObject {
         }
     }
 
-    // ── Sign in with Apple via Supabase OAuth
-    // Opens Safari → user authenticates → deep link returns token
-    func signInWithApple() {
-        openOAuthURL(provider: "apple")
+    // ── Sign in with Apple — in-app sheet via ASWebAuthenticationSession
+    func signInWithApple() async {
+        await performOAuth(provider: "apple")
     }
 
-    // ── Sign in with Google via Supabase OAuth
-    func signInWithGoogle() {
-        openOAuthURL(provider: "google")
+    // ── Sign in with Google — in-app sheet via ASWebAuthenticationSession
+    func signInWithGoogle() async {
+        await performOAuth(provider: "google")
     }
 
-    private func openOAuthURL(provider: String) {
+    // Presents OAuth in an in-app Safari sheet; no external browser needed.
+    private func performOAuth(provider: String) async {
         errorMessage = nil
         let redirect = "betfit://auth/callback"
         let encoded  = redirect.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         let urlStr   = "\(SUPABASE_URL)/auth/v1/authorize?provider=\(provider)&redirect_to=\(encoded)"
         guard let url = URL(string: urlStr) else { return }
-        UIApplication.shared.open(url)
+
+        do {
+            let callbackURL: URL = try await withCheckedThrowingContinuation { continuation in
+                let session = ASWebAuthenticationSession(
+                    url: url,
+                    callbackURLScheme: "betfit"
+                ) { callbackURL, error in
+                    if let error = error {
+                        continuation.resume(throwing: error)
+                    } else if let callbackURL = callbackURL {
+                        continuation.resume(returning: callbackURL)
+                    } else {
+                        continuation.resume(throwing: URLError(.badServerResponse))
+                    }
+                }
+                session.presentationContextProvider = self
+                // false = share cookies with Safari (enables SSO)
+                session.prefersEphemeralWebBrowserSession = false
+                webAuthSession = session
+                session.start()
+            }
+            webAuthSession = nil
+            await handleCallback(url: callbackURL)
+        } catch let error as ASWebAuthenticationSessionError where error.code == .canceledLogin {
+            // User dismissed the sheet — nothing to do
+            webAuthSession = nil
+        } catch {
+            webAuthSession = nil
+            errorMessage = "Sign in failed. Please try again."
+        }
+    }
+
+    // ASWebAuthenticationPresentationContextProviding
+    nonisolated func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first { $0.isKeyWindow } ?? ASPresentationAnchor()
     }
 
     // ── Handle OAuth callback deep link
@@ -153,8 +194,9 @@ final class AuthManager: ObservableObject {
         UserDefaults.standard.set(refresh, forKey: refreshKey)
         accessToken = token
 
-        // Fetch user profile
+        // Fetch user profile then load Supabase profile data
         await fetchUser(token: token)
+        await ProfileManager.shared.load()
     }
 
     // ── Sign out

@@ -92,19 +92,6 @@ struct DashboardView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { Task { await sync.syncToday(challengeId: challengeId) } }) {
-                        Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white)
-                            .frame(width: 34, height: 34)
-                            .background(Color.bfBgRaised)
-                            .clipShape(Circle())
-                            .overlay(Circle().stroke(Color.bfBorder, lineWidth: 0.5))
-                    }
-                }
-            }
             .toolbarBackground(Color.bfBg, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .task {

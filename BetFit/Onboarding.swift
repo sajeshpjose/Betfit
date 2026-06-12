@@ -69,8 +69,24 @@ struct OnboardingView: View {
     }
 
     private func finish() {
-        // TODO: Save profile to Supabase here
-        withAnimation { hasCompletedOnboarding = true }
+        Task {
+            // Save text fields
+            try? await ProfileManager.shared.save(
+                fullName: profileName,
+                handle:   username.hasPrefix("@") ? username : "@\(username)",
+                company:  companyCode
+            )
+
+            // Upload avatar if one was chosen
+            if let item = selectedPhoto,
+               let data = try? await item.loadTransferable(type: Data.self),
+               let uiImg = UIImage(data: data),
+               let jpeg = uiImg.jpegData(compressionQuality: 0.8) {
+                _ = try? await ProfileManager.shared.uploadAvatar(imageData: jpeg)
+            }
+
+            withAnimation { hasCompletedOnboarding = true }
+        }
     }
 }
 

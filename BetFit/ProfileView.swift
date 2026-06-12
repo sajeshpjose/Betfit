@@ -15,23 +15,19 @@ struct Badge: Identifiable {
 
 struct ProfileView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
+    @StateObject private var profile = ProfileManager.shared
+    @StateObject private var sync    = StepSyncManager.shared
     @State private var selectedPhoto: PhotosPickerItem? = nil
     @State private var avatarImage: Image? = nil
     @State private var showSignOutAlert = false
     @State private var showEditProfile = false
 
-    @State private var name       = "Sajesh Kumar"
-    @State private var handle     = "@sajesh"
-    @State private var company    = "Acme Corp"
-    let totalSteps = 142000
+    private var name:    String { profile.fullName.isEmpty ? "Your Name" : profile.fullName }
+    private var handle:  String { profile.handle.isEmpty   ? "@handle"   : profile.handle }
+    private var company: String { profile.company.isEmpty  ? "Your Company" : profile.company }
     let challenges = 3
     let streakDays = 6
     let bestFinish = "2× 🥈"
-
-    let weeklySteps: [(day: String, steps: Int)] = [
-        ("Mon", 7200), ("Tue", 9800), ("Wed", 8400),
-        ("Thu", 3225), ("Fri", 0),    ("Sat", 0), ("Sun", 0),
-    ]
 
     let badges: [Badge] = [
         Badge(emoji: "🔥", label: "7 day streak",  earned: true),
@@ -54,10 +50,10 @@ struct ProfileView: View {
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity, alignment: .leading)
 
-                        DarkProfileHero(name: name, handle: handle, company: company, totalSteps: totalSteps, challenges: challenges, streakDays: streakDays, selectedPhoto: $selectedPhoto, avatarImage: $avatarImage, onEditProfile: { showEditProfile = true })
-                        DarkWeeklyChart(weeklySteps: weeklySteps, dailyGoal: 10000)
+                        DarkProfileHero(name: name, handle: handle, company: company, totalSteps: sync.weeklySteps.map(\.steps).reduce(0,+), challenges: challenges, streakDays: streakDays, selectedPhoto: $selectedPhoto, avatarImage: $avatarImage, onEditProfile: { showEditProfile = true })
+                        DarkWeeklyChart(weeklySteps: sync.weeklySteps, dailyGoal: 10000)
                         DarkBadgesCard(badges: badges)
-                        DarkAllTimeStats(totalSteps: totalSteps, challenges: challenges, bestFinish: bestFinish)
+                        DarkAllTimeStats(totalSteps: sync.weeklySteps.map(\.steps).reduce(0,+), challenges: challenges, bestFinish: bestFinish)
                         DarkSettingsCard(onSignOut: { showSignOutAlert = true })
                     }
                     .padding(.horizontal, 16)
@@ -77,8 +73,20 @@ struct ProfileView: View {
             }
             .toolbarBackground(Color.bfBg, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
+            .task {
+                await sync.fetchWeeklySteps()
+                // Load saved avatar from Supabase Storage URL if not already shown
+                if avatarImage == nil, let urlString = profile.avatarURL,
+                   let url = URL(string: urlString),
+                   let (data, _) = try? await URLSession.shared.data(from: url),
+                   let uiImg = UIImage(data: data) {
+                    avatarImage = Image(uiImage: uiImg)
+                }
+            }
             .sheet(isPresented: $showEditProfile) {
-                EditProfileSheet(name: $name, handle: $handle, company: $company)
+                EditProfileSheet(name: Binding(get: { name }, set: { _ in }),
+                                 handle: Binding(get: { handle }, set: { _ in }),
+                                 company: Binding(get: { company }, set: { _ in }))
             }
             .alert("Sign out?", isPresented: $showSignOutAlert) {
                 Button("Sign out", role: .destructive) { hasCompletedOnboarding = false }
@@ -122,8 +130,20 @@ struct DarkProfileHero: View {
             }
             .onChange(of: selectedPhoto) { _, newItem in
                 Task {
-                    if let data = try? await newItem?.loadTransferable(type: Data.self),
-                       let uiImg = UIImage(data: data) { avatarImage = Image(uiImage: uiImg) }
+                    guard let data = try? await newItem?.loadTransferable(type: Data.self),
+                          let uiImg = UIImage(data: data) else { return }
+
+                    // Show immediately in the UI
+                    avatarImage = Image(uiImage: uiImg)
+
+                    // Compress and upload to Supabase Storage
+                    let compressed = uiImg.jpegData(compressionQuality: 0.8) ?? data
+                    do {
+                        _ = try await ProfileManager.shared.uploadAvatar(imageData: compressed)
+                    } catch {
+                        // Non-fatal — image still shows locally
+                        print("Avatar upload failed: \(error)")
+                    }
                 }
             }
 
@@ -307,19 +327,29 @@ struct EditProfileSheet: View {
     @Binding var handle: String
     @Binding var company: String
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var profile = ProfileManager.shared
 
-    @State private var draftName: String = ""
-    @State private var draftHandle: String = ""
+    @State private var draftName: String    = ""
+    @State private var draftHandle: String  = ""
     @State private var draftCompany: String = ""
+    @State private var isSaving = false
+    @State private var saveError: String?   = nil
 
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.bfBg.ignoresSafeArea()
                 VStack(spacing: 16) {
-                    EditProfileField(label: "Name", text: $draftName, placeholder: "Your full name")
-                    EditProfileField(label: "Handle", text: $draftHandle, placeholder: "@username")
+                    EditProfileField(label: "Name",    text: $draftName,    placeholder: "Your full name")
+                    EditProfileField(label: "Handle",  text: $draftHandle,  placeholder: "@username")
                     EditProfileField(label: "Company", text: $draftCompany, placeholder: "Your company")
+
+                    if let err = saveError {
+                        Text(err)
+                            .font(.system(size: 12))
+                            .foregroundColor(.bfDestructive)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                     Spacer()
                 }
                 .padding(.horizontal, 16)
@@ -330,28 +360,46 @@ struct EditProfileSheet: View {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismiss() }
                         .foregroundColor(.bfTextWeak)
+                        .disabled(isSaving)
                 }
                 ToolbarItem(placement: .principal) {
-                    Text("Edit Profile").font(.system(size: 16, weight: .semibold)).foregroundColor(.white)
+                    Text("Edit Profile")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
-                        name = draftName
-                        handle = draftHandle
-                        company = draftCompany
-                        dismiss()
+                    if isSaving {
+                        ProgressView().tint(.bfPrimary)
+                    } else {
+                        Button("Save") {
+                            Task {
+                                isSaving = true
+                                saveError = nil
+                                do {
+                                    try await ProfileManager.shared.save(
+                                        fullName: draftName,
+                                        handle:   draftHandle,
+                                        company:  draftCompany
+                                    )
+                                    dismiss()
+                                } catch {
+                                    saveError = "Failed to save. Please try again."
+                                }
+                                isSaving = false
+                            }
+                        }
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.bfPrimary)
                     }
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.bfPrimary)
                 }
             }
             .toolbarBackground(Color.bfBg, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
         }
         .onAppear {
-            draftName = name
-            draftHandle = handle
-            draftCompany = company
+            draftName    = profile.fullName
+            draftHandle  = profile.handle
+            draftCompany = profile.company
         }
     }
 }
