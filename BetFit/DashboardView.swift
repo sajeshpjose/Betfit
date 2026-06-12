@@ -24,19 +24,24 @@ struct LeaderboardRow: Identifiable {
 
 struct DashboardView: View {
 
-    @StateObject private var sync = StepSyncManager.shared
-    let challengeId = "00000000-0000-0000-0000-000000000001"
+    @StateObject private var sync        = StepSyncManager.shared
+    @StateObject private var challenges  = ChallengeManager.shared
     let dailyGoal: Int = 10000
+
+    // Use first enrolled challenge; falls back to placeholder UUID
+    private var activeChallengeId: String {
+        challenges.enrolledChallenges.first?.id.uuidString
+            ?? "00000000-0000-0000-0000-000000000001"
+    }
+    private var leaderboardRows: [LeaderboardRow] {
+        challenges.topEntries(for: activeChallengeId, limit: 3).map {
+            LeaderboardRow(rank: $0.rank, teamName: $0.teamName, steps: $0.steps, isYou: $0.isYou)
+        }
+    }
 
     let teamMembers: [TeamMember] = [
         TeamMember(initials: "SK", name: "You",     steps: 6241, avatarColor: .bfPrimary,            textColor: Color(hex: "#000000")),
         TeamMember(initials: "JT", name: "John T.", steps: 8102, avatarColor: Color(hex: "#2A2A2A"), textColor: Color(hex: "#AAAAAA")),
-    ]
-
-    let leaderboardRows: [LeaderboardRow] = [
-        LeaderboardRow(rank: 1, teamName: "Alpha Movers",  steps: 15321, isYou: false),
-        LeaderboardRow(rank: 2, teamName: "The Fast Pair", steps: 14343, isYou: true),
-        LeaderboardRow(rank: 3, teamName: "Road Runners",  steps: 13890, isYou: false),
     ]
 
     var goalProgress: Double { min(Double(sync.todaySteps) / Double(dailyGoal), 1.0) }
@@ -97,11 +102,21 @@ struct DashboardView: View {
             .task {
                 let granted = await sync.requestAuthorization()
                 if granted {
-                    await sync.syncToday(challengeId: challengeId)
-                    sync.setupBackgroundDelivery(challengeId: challengeId)
+                    await sync.syncToday(challengeId: activeChallengeId)
+                    sync.setupBackgroundDelivery(challengeId: activeChallengeId)
+                }
+                // Load challenges + leaderboard for mini-leaderboard widget
+                await challenges.loadChallenges()
+                if let id = challenges.enrolledChallenges.first?.id {
+                    await challenges.loadLeaderboard(for: id)
                 }
             }
-            .refreshable { await sync.syncToday(challengeId: challengeId) }
+            .refreshable {
+                await sync.syncToday(challengeId: activeChallengeId)
+                if let id = challenges.enrolledChallenges.first?.id {
+                    await challenges.loadLeaderboard(for: id)
+                }
+            }
         }
     }
 }
@@ -339,7 +354,9 @@ struct DarkMiniLeaderboard: View {
             HStack {
                 Text("Leaderboard").font(.system(size: 14, weight: .bold)).foregroundColor(.white)
                 Spacer()
-                Text("See all →").font(.system(size: 11, weight: .medium)).foregroundColor(.bfTextWeak)
+                NavigationLink(destination: LeaderboardView()) {
+                    Text("See all →").font(.system(size: 11, weight: .medium)).foregroundColor(.bfTextWeak)
+                }
             }
             .padding(.horizontal, 16).padding(.top, 16).padding(.bottom, 8)
 

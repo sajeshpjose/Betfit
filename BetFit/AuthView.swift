@@ -135,11 +135,23 @@ struct AuthView: View {
                         .disabled(isLoadingApple || isLoadingGoogle)
                     }
 
-                    Text("By continuing you agree to Betfit's Terms of Service and Privacy Policy.")
-                        .font(.system(size: 11))
-                        .foregroundColor(.bfTextMuted)
-                        .multilineTextAlignment(.center)
-                        .frame(maxWidth: .infinity)
+                    Group {
+                        Text("By continuing you agree to Betfit's ")
+                        + Text("[Terms of Service](\(BetFitLinks.termsOfService))")
+                            .underline()
+                        + Text(" and ")
+                        + Text("[Privacy Policy](\(BetFitLinks.privacyPolicy))")
+                            .underline()
+                        + Text(".")
+                    }
+                    .font(.system(size: 11))
+                    .foregroundColor(.bfTextMuted)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .environment(\.openURL, OpenURLAction { url in
+                        UIApplication.shared.open(url)
+                        return .handled
+                    })
                 }
                 .padding(.horizontal, 24)
                 .padding(.top, 28)

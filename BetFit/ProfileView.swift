@@ -22,21 +22,21 @@ struct ProfileView: View {
     @State private var showSignOutAlert = false
     @State private var showEditProfile = false
 
-    private var name:    String { profile.fullName.isEmpty ? "Your Name" : profile.fullName }
-    private var handle:  String { profile.handle.isEmpty   ? "@handle"   : profile.handle }
-    private var company: String { profile.company.isEmpty  ? "Your Company" : profile.company }
-    let challenges = 3
-    let streakDays = 6
-    let bestFinish = "2× 🥈"
+    private var name:    String { profile.fullName.isEmpty ? "Your Name"     : profile.fullName }
+    private var handle:  String { profile.handle.isEmpty   ? "@handle"       : profile.handle }
+    private var company: String { profile.company.isEmpty  ? "Your Company"  : profile.company }
+    private var challenges: Int    { profile.challengeCount }
+    private var streakDays: Int    { profile.streakDays }
+    private var bestFinish: String { profile.bestFinish }
 
-    let badges: [Badge] = [
-        Badge(emoji: "🔥", label: "7 day streak",  earned: true),
-        Badge(emoji: "👟", label: "First 10k day", earned: true),
-        Badge(emoji: "🤝", label: "Team player",   earned: true),
-        Badge(emoji: "🏅", label: "Top 3 finish",  earned: false),
+    private var badges: [Badge] {[
+        Badge(emoji: "🔥", label: "7 day streak",  earned: streakDays >= 7),
+        Badge(emoji: "👟", label: "First 10k day", earned: sync.weeklySteps.map(\.steps).max() ?? 0 >= 10000),
+        Badge(emoji: "🤝", label: "Team player",   earned: challenges >= 1),
+        Badge(emoji: "🏅", label: "Top 3 finish",  earned: bestFinish.contains("🥇") || bestFinish.contains("🥈") || bestFinish.contains("🥉")),
         Badge(emoji: "🏃", label: "5K complete",   earned: false),
-        Badge(emoji: "⚡", label: "30 day streak", earned: false),
-    ]
+        Badge(emoji: "⚡", label: "30 day streak", earned: streakDays >= 30),
+    ]}
 
     var body: some View {
         NavigationStack {
@@ -75,6 +75,7 @@ struct ProfileView: View {
             .toolbarBackground(.visible, for: .navigationBar)
             .task {
                 await sync.fetchWeeklySteps()
+                await profile.fetchStats()
                 // Load saved avatar from Supabase Storage URL if not already shown
                 if avatarImage == nil, let urlString = profile.avatarURL,
                    let url = URL(string: urlString),
@@ -290,15 +291,27 @@ struct DarkSettingsCard: View {
     let onSignOut: () -> Void
     var body: some View {
         VStack(spacing: 0) {
-            DarkSettingRow(icon: "heart.text.square.fill", label: "Apple Health", value: "Connected", valueColor: Color.bfPrimary)
+            DarkSettingRow(icon: "heart.text.square.fill", label: "Apple Health",  value: "Connected", valueColor: Color.bfPrimary)
             Divider().background(Color.bfBorder).padding(.horizontal, 18)
-            DarkSettingRow(icon: "bell.fill", label: "Notifications", value: "Daily reminders")
+            DarkSettingRow(icon: "bell.fill",              label: "Notifications", value: "Daily reminders") {
+                if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
             Divider().background(Color.bfBorder).padding(.horizontal, 18)
-            DarkSettingRow(icon: "building.2.fill", label: "Company", value: "Acme Corp")
+            DarkSettingRow(icon: "building.2.fill",        label: "Company",       value: "Acme Corp")
             Divider().background(Color.bfBorder).padding(.horizontal, 18)
-            DarkSettingRow(icon: "lock.fill", label: "Privacy", value: "Profile visible")
+            DarkSettingRow(icon: "lock.fill",              label: "Privacy Policy", value: "") {
+                UIApplication.shared.open(BetFitLinks.privacyPolicy)
+            }
             Divider().background(Color.bfBorder).padding(.horizontal, 18)
-            DarkSettingRow(icon: "questionmark.circle.fill", label: "Help & support", value: "")
+            DarkSettingRow(icon: "doc.text.fill",          label: "Terms of Service", value: "") {
+                UIApplication.shared.open(BetFitLinks.termsOfService)
+            }
+            Divider().background(Color.bfBorder).padding(.horizontal, 18)
+            DarkSettingRow(icon: "questionmark.circle.fill", label: "Help & support", value: "") {
+                UIApplication.shared.open(BetFitLinks.helpSupport)
+            }
             Divider().background(Color.bfBorder).padding(.horizontal, 18)
             Button(action: onSignOut) {
                 HStack(spacing: 12) {

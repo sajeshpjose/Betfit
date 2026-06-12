@@ -21,70 +21,102 @@ enum LeaderboardFilter: String, CaseIterable {
 }
 
 struct LeaderboardView: View {
+    // Optional — pass a challengeId to show a specific challenge's leaderboard.
+    // When nil, shows the user's first enrolled challenge.
+    var challengeId: UUID? = nil
+
+    @StateObject private var manager = ChallengeManager.shared
     @State private var selectedFilter: LeaderboardFilter = .teams
 
-    let teams: [LeaderboardTeam] = [
-        LeaderboardTeam(rank: 1, teamName: "Alpha Movers",   member1: "Amir M.",   member2: "Priya K.",  steps: 15321, distanceKm: 10.2, isYou: false),
-        LeaderboardTeam(rank: 2, teamName: "The Fast Pair",  member1: "Sajesh",    member2: "John T.",   steps: 14343, distanceKm: 9.5,  isYou: true),
-        LeaderboardTeam(rank: 3, teamName: "Road Runners",   member1: "Rania N.",  member2: "Chris L.",  steps: 13890, distanceKm: 9.2,  isYou: false),
-        LeaderboardTeam(rank: 4, teamName: "Brisk Walkers",  member1: "Ben W.",    member2: "Leo M.",    steps: 12100, distanceKm: 8.0,  isYou: false),
-        LeaderboardTeam(rank: 5, teamName: "Step Squad",     member1: "Sara F.",   member2: "Tim G.",    steps: 11450, distanceKm: 7.6,  isYou: false),
-        LeaderboardTeam(rank: 6, teamName: "Morning Crew",   member1: "Maya R.",   member2: "Nav P.",    steps: 10980, distanceKm: 7.3,  isYou: false),
-        LeaderboardTeam(rank: 7, teamName: "Duo Dynamos",    member1: "Dan K.",    member2: "Eve J.",    steps: 10210, distanceKm: 6.8,  isYou: false),
-        LeaderboardTeam(rank: 8, teamName: "Hustle & Grind", member1: "Hannah L.", member2: "Omar B.",   steps: 9870,  distanceKm: 6.5,  isYou: false),
-    ]
-
-    var yourTeam: LeaderboardTeam? { teams.first { $0.isYou } }
-    var top3: [LeaderboardTeam] { Array(teams.prefix(3)) }
+    private var activeChallengeId: UUID? {
+        challengeId ?? manager.enrolledChallenges.first?.id
+    }
+    private var entries: [ChallengeLeaderboardEntry] {
+        guard let id = activeChallengeId else { return [] }
+        return manager.leaderboards[id.uuidString] ?? []
+    }
+    private var yourEntry: ChallengeLeaderboardEntry? { entries.first { $0.isYou } }
+    private var top3: [ChallengeLeaderboardEntry]     { Array(entries.prefix(3)) }
+    private var challenge: BFChallenge? {
+        guard let id = activeChallengeId else { return nil }
+        return manager.enrolledChallenges.first { $0.id == id }
+            ?? manager.publicChallenges.first   { $0.id == id }
+    }
 
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.bfBg.ignoresSafeArea()
 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        Text("Leaderboard")
-                            .font(.system(size: 26, weight: .bold))
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 16)
-                            .padding(.top, 4)
-                            .padding(.bottom, 8)
+                if entries.isEmpty {
+                    VStack(spacing: 12) {
+                        ProgressView().tint(.bfPrimary)
+                        Text("Loading leaderboard…")
+                            .font(.system(size: 13))
+                            .foregroundColor(.bfTextWeak)
+                    }
+                } else {
+                    ScrollView(showsIndicators: false) {
+                        VStack(spacing: 0) {
+                            Text("Leaderboard")
+                                .font(.system(size: 26, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 16)
+                                .padding(.top, 4)
+                                .padding(.bottom, 8)
 
-                        DarkPodiumView(teams: top3)
-                            .padding(.bottom, 12)
+                            DarkPodiumView(teams: top3)
+                                .padding(.bottom, 12)
 
-                        VStack(spacing: 10) {
-                            if let you = yourTeam {
-                                YourPositionBanner(team: you, behindBy: 978)
-                            }
-                            HStack {
-                                Text("All teams · 50 competing")
-                                    .font(.system(size: 10, weight: .semibold))
-                                    .foregroundColor(.bfTextMuted)
-                                    .textCase(.uppercase).tracking(0.6)
-                                Spacer()
-                            }
-                            .padding(.horizontal, 2)
+                            VStack(spacing: 10) {
+                                if let you = yourEntry {
+                                    YourPositionBanner(team: you, behindBy: yourBehindBy)
+                                }
 
-                            VStack(spacing: 8) {
-                                ForEach(teams) { team in
-                                    DarkLeaderboardRowView(team: team)
+                                HStack {
+                                    Text("All teams · \(entries.count) competing")
+                                        .font(.system(size: 10, weight: .semibold))
+                                        .foregroundColor(.bfTextMuted)
+                                        .textCase(.uppercase).tracking(0.6)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 2)
+
+                                VStack(spacing: 8) {
+                                    ForEach(entries) { entry in
+                                        BFLeaderboardRow(
+                                            rank: entry.rank,
+                                            teamName: entry.teamName,
+                                            member1: entry.member1,
+                                            member2: entry.member2,
+                                            steps: entry.steps,
+                                            distanceKm: entry.distanceKm,
+                                            isYou: entry.isYou
+                                        )
+                                    }
                                 }
                             }
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 100)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 100)
+                    }
+                    .refreshable {
+                        if let id = activeChallengeId {
+                            await manager.loadLeaderboard(for: id)
+                        }
                     }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Text("6 days left").font(.system(size: 10, weight: .bold)).foregroundColor(.black)
-                        .padding(.horizontal, 10).padding(.vertical, 5)
-                        .background(Color.bfPrimary).clipShape(Capsule())
+                if let c = challenge, c.daysLeft > 0 {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Text("\(c.daysLeft) days left")
+                            .font(.system(size: 10, weight: .bold)).foregroundColor(.black)
+                            .padding(.horizontal, 10).padding(.vertical, 5)
+                            .background(Color.bfPrimary).clipShape(Capsule())
+                    }
                 }
             }
             .toolbarBackground(Color.bfBg, for: .navigationBar)
@@ -92,7 +124,19 @@ struct LeaderboardView: View {
             .safeAreaInset(edge: .top) {
                 DarkFilterTabBar(selected: $selectedFilter).background(Color.bfBg)
             }
+            .task {
+                if let id = activeChallengeId {
+                    await manager.loadLeaderboard(for: id)
+                }
+            }
         }
+    }
+
+    private var yourBehindBy: Int {
+        guard let you = yourEntry, you.rank > 1,
+              let above = entries.first(where: { $0.rank == you.rank - 1 })
+        else { return 0 }
+        return max(0, above.steps - you.steps)
     }
 }
 
@@ -100,8 +144,8 @@ struct LeaderboardView: View {
 typealias DarkFilterTabBar = BFFilterTabBar<LeaderboardFilter>
 
 struct DarkPodiumView: View {
-    let teams: [LeaderboardTeam]
-    var podiumOrder: [LeaderboardTeam] {
+    let teams: [ChallengeLeaderboardEntry]
+    var podiumOrder: [ChallengeLeaderboardEntry] {
         guard teams.count >= 3 else { return teams }
         return [teams[1], teams[0], teams[2]]
     }
@@ -120,7 +164,7 @@ struct DarkPodiumView: View {
 }
 
 struct DarkPodiumItem: View {
-    let team: LeaderboardTeam
+    let team: ChallengeLeaderboardEntry
     var blockHeight: CGFloat { team.rank == 1 ? 80 : team.rank == 2 ? 58 : 44 }
     var blockColor: Color {
         team.rank == 1 ? Color.bfPrimary : team.rank == 2 ? Color(hex: "#2A2A2A") : Color(hex: "#1E1E1E")
@@ -144,7 +188,7 @@ struct DarkPodiumItem: View {
 
 // DarkLeaderboardRowView → use BFLeaderboardRow from Molecules.swift
 private struct DarkLeaderboardRowView: View {
-    let team: LeaderboardTeam
+    let team: ChallengeLeaderboardEntry
     var body: some View {
         BFLeaderboardRow(
             rank: team.rank,
@@ -159,7 +203,7 @@ private struct DarkLeaderboardRowView: View {
 }
 
 struct YourPositionBanner: View {
-    let team: LeaderboardTeam
+    let team: ChallengeLeaderboardEntry
     let behindBy: Int
 
     var body: some View {

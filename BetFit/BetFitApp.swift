@@ -8,8 +8,11 @@ import SwiftUI
 @main
 struct BetFitApp: App {
 
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
-    @StateObject private var auth = AuthManager.shared
+    @StateObject private var auth     = AuthManager.shared
+    @StateObject private var deepLink = DeepLinkManager.shared
 
     var body: some Scene {
         WindowGroup {
@@ -28,14 +31,22 @@ struct BetFitApp: App {
                 } else {
                     MainTabView()
                         .environmentObject(auth)
+                        .environmentObject(deepLink)
+                        .task {
+                            // Request notification permission once signed in
+                            await NotificationManager.shared.checkAuthorizationStatus()
+                            if !NotificationManager.shared.isAuthorized {
+                                await NotificationManager.shared.requestPermission()
+                            }
+                            if NotificationManager.shared.isAuthorized {
+                                NotificationManager.shared.scheduleDailyStepReminder()
+                            }
+                        }
                 }
             }
-            // Force always dark regardless of system setting
             .preferredColorScheme(.dark)
             .onOpenURL { url in
-                Task {
-                    await AuthManager.shared.handleCallback(url: url)
-                }
+                Task { await DeepLinkManager.shared.handle(url: url) }
             }
         }
     }
@@ -70,19 +81,13 @@ struct MainTabView: View {
     var body: some View {
         TabView {
             DashboardView()
-                .tabItem { Label("Home",        systemImage: "house.fill") }
+                .tabItem { Label("Home",       systemImage: "house.fill") }
 
-            LeaderboardView()
-                .tabItem { Label("Leaderboard", systemImage: "trophy.fill") }
-
-            C25KView()
-                .tabItem { Label("5K Plan",     systemImage: "figure.run") }
-
-            TeamView()
-                .tabItem { Label("Team",        systemImage: "person.2.fill") }
+            ChallengesView()
+                .tabItem { Label("Challenges", systemImage: "trophy.fill") }
 
             ProfileView()
-                .tabItem { Label("Profile",     systemImage: "person.fill") }
+                .tabItem { Label("Profile",    systemImage: "person.fill") }
         }
         .tint(Color.bfPrimary)
     }

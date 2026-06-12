@@ -1,0 +1,14 @@
+# Apple private key — never commit
+*.p8
+
+# Xcode
+*.xcworkspace
+xcuserdata/
+DerivedData/
+.build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# macOS
+.DS_Store

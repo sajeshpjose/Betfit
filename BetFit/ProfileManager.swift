@@ -56,12 +56,17 @@ final class ProfileManager: ObservableObject {
 
     static let shared = ProfileManager()
 
-    @Published var fullName: String  = ""
-    @Published var handle: String    = ""
-    @Published var company: String   = ""
+    @Published var fullName: String   = ""
+    @Published var handle: String     = ""
+    @Published var company: String    = ""
     @Published var avatarURL: String? = nil
-    @Published var isLoading: Bool   = false
+    @Published var isLoading: Bool    = false
     @Published var errorMessage: String? = nil
+
+    // ── Stats
+    @Published var streakDays:     Int    = 0
+    @Published var challengeCount: Int    = 0
+    @Published var bestFinish:     String = "—"
 
     private init() {}
 
@@ -144,5 +149,86 @@ final class ProfileManager: ObservableObject {
         self.fullName = fullName
         self.handle   = handle
         self.company  = company
+    }
+
+    // ── Fetch streak, challenge count, and best finish from Supabase
+    func fetchStats() async {
+        guard let userId = AuthManager.shared.userId else { return }
+        async let streakTask     = fetchStreak(userId: userId)
+        async let challengeTask  = fetchChallengeCount(userId: userId)
+        async let bestTask       = fetchBestFinish(userId: userId)
+        let (streak, count, best) = await (streakTask, challengeTask, bestTask)
+        streakDays     = streak
+        challengeCount = count
+        bestFinish     = best
+    }
+
+    // ── Count consecutive days with steps > 0 working backwards from today
+    private func fetchStreak(userId: String) async -> Int {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        guard let from = Calendar.current.date(byAdding: .day, value: -60, to: Date()) else { return 0 }
+        let fromStr = formatter.string(from: from)
+
+        guard let data = try? await AuthManager.shared.get(
+            path: "step_logs?user_id=eq.\(userId)&log_date=gte.\(fromStr)&select=log_date,step_count&order=log_date.desc"
+        ) else { return 0 }
+
+        struct LogRow: Codable {
+            let logDate: String
+            let stepCount: Int
+            enum CodingKeys: String, CodingKey { case logDate = "log_date"; case stepCount = "step_count" }
+        }
+        let rows = (try? JSONDecoder().decode([LogRow].self, from: data)) ?? []
+        let dateSet = Set(rows.filter { $0.stepCount > 0 }.map(\.logDate))
+
+        var streak  = 0
+        var check   = Date()
+        let cal     = Calendar.current
+        for _ in 0..<60 {
+            if dateSet.contains(formatter.string(from: check)) {
+                streak += 1
+                check = cal.date(byAdding: .day, value: -1, to: check) ?? check
+            } else {
+                break
+            }
+        }
+        return streak
+    }
+
+    // ── Count challenges the user has enrolled in
+    private func fetchChallengeCount(userId: String) async -> Int {
+        guard let data = try? await AuthManager.shared.get(
+            path: "challenge_teams?created_by=eq.\(userId)&select=id"
+        ) else { return 0 }
+        struct Row: Codable { let id: UUID }
+        return ((try? JSONDecoder().decode([Row].self, from: data)) ?? []).count
+    }
+
+    // ── Find best (lowest) rank achieved across all challenges
+    private func fetchBestFinish(userId: String) async -> String {
+        // Get user's team IDs
+        guard let teamData = try? await AuthManager.shared.get(
+            path: "challenge_teams?created_by=eq.\(userId)&select=id"
+        ) else { return "—" }
+        struct TeamRow: Codable { let id: UUID }
+        let teams = (try? JSONDecoder().decode([TeamRow].self, from: teamData)) ?? []
+        guard !teams.isEmpty else { return "—" }
+
+        let ids = teams.map { $0.id.uuidString }.joined(separator: ",")
+
+        // Query leaderboard for those teams — pick lowest rank
+        guard let lbData = try? await AuthManager.shared.get(
+            path: "challenge_leaderboard?team_id=in.(\(ids))&select=rank&order=rank.asc&limit=1"
+        ) else { return "—" }
+        struct RankRow: Codable { let rank: Int }
+        guard let best = ((try? JSONDecoder().decode([RankRow].self, from: lbData)) ?? []).first else { return "—" }
+
+        switch best.rank {
+        case 1: return "🥇 1st"
+        case 2: return "🥈 2nd"
+        case 3: return "🥉 3rd"
+        default: return "#\(best.rank)"
+        }
     }
 }
