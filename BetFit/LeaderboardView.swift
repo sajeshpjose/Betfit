@@ -91,27 +91,8 @@ struct LeaderboardView: View {
     }
 }
 
-struct DarkFilterTabBar: View {
-    @Binding var selected: LeaderboardFilter
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 6) {
-                ForEach(LeaderboardFilter.allCases, id: \.self) { filter in
-                    Button(action: { withAnimation(.spring(response: 0.25)) { selected = filter } }) {
-                        Text(filter.rawValue)
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundColor(selected == filter ? .black : Color(hex: "#666666"))
-                            .padding(.horizontal, 14).padding(.vertical, 7)
-                            .background(selected == filter ? Color.bfPrimary : Color(hex: "#1E1E1E"))
-                            .clipShape(Capsule())
-                            .overlay(Capsule().stroke(Color.bfBorder, lineWidth: 0.5))
-                    }
-                }
-            }
-            .padding(.horizontal, 16).padding(.vertical, 10)
-        }
-    }
-}
+// DarkFilterTabBar → use BFFilterTabBar from Molecules.swift
+typealias DarkFilterTabBar = BFFilterTabBar<LeaderboardFilter>
 
 struct DarkPodiumView: View {
     let teams: [LeaderboardTeam]
@@ -156,40 +137,19 @@ struct DarkPodiumItem: View {
     }
 }
 
-struct DarkLeaderboardRowView: View {
+// DarkLeaderboardRowView → use BFLeaderboardRow from Molecules.swift
+private struct DarkLeaderboardRowView: View {
     let team: LeaderboardTeam
-    var rankColor: Color {
-        switch team.rank {
-        case 1: return Color(hex: "#B8860B")
-        case 2: return Color(hex: "#888888")
-        case 3: return Color(hex: "#8B5C2A")
-        default: return .white
-        }
-    }
     var body: some View {
-        HStack(spacing: 10) {
-            Text("\(team.rank)").font(.system(size: 14, weight: .bold)).foregroundColor(rankColor).frame(width: 24, alignment: .center)
-            HStack(spacing: -7) {
-                Circle().fill(team.isYou ? Color.bfPrimary : Color(hex: "#2A2A2A")).frame(width: 28, height: 28)
-                Circle().fill(Color(hex: "#1E1E1E")).frame(width: 28, height: 28).overlay(Circle().stroke(team.isYou ? Color.bfPrimary.opacity(0.3) : Color.bfBgRaised, lineWidth: 1.5))
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    Text(team.teamName).font(.system(size: 12, weight: team.isYou ? .semibold : .medium)).foregroundColor(team.isYou ? .bfPrimary : .white)
-                    if team.isYou { Text("· You").font(.system(size: 10)).foregroundColor(.bfTextWeak) }
-                }
-                Text("\(team.member1) · \(team.member2)").font(.system(size: 10)).foregroundColor(.bfTextMuted)
-            }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(team.steps.formatted()).font(.system(size: 13, weight: .bold)).foregroundColor(.white)
-                Text(String(format: "%.1f km", team.distanceKm)).font(.system(size: 10)).foregroundColor(.bfTextMuted)
-            }
-        }
-        .padding(.horizontal, 14).padding(.vertical, 10)
-        .background(team.isYou ? Color.bfPrimary.opacity(0.08) : Color.bfBgRaised)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(team.isYou ? Color.bfPrimary.opacity(0.3) : Color.bfBorder, lineWidth: 0.5))
+        BFLeaderboardRow(
+            rank: team.rank,
+            teamName: team.teamName,
+            member1: team.member1,
+            member2: team.member2,
+            steps: team.steps,
+            distanceKm: team.distanceKm,
+            isYou: team.isYou
+        )
     }
 }
 

@@ -145,12 +145,7 @@ struct DarkProfileHero: View {
                 ProfileStatItem(value: "\(streakDays)", label: "Day streak")
             }
 
-            Button(action: onEditProfile) {
-                Text("Edit profile").font(.system(size: 13, weight: .semibold)).foregroundColor(.white)
-                    .frame(maxWidth: .infinity).frame(height: 38)
-                    .background(Color.bfBgElevated).clipShape(Capsule())
-                    .overlay(Capsule().stroke(Color.bfBorder, lineWidth: 0.5))
-            }
+            BFButton(label: "Edit profile", variant: .secondary, fullWidth: true, height: 38, action: onEditProfile)
         }
         .padding(18)
         .background(Color.bfBgRaised)
@@ -266,19 +261,8 @@ struct DarkAllTimeStats: View {
     }
 }
 
-private struct DarkAllTimeStat: View {
-    let value: String
-    let label: String
-    var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(value).font(.system(size: 16, weight: .bold)).foregroundColor(.white)
-            Text(label).font(.system(size: 10)).foregroundColor(.bfTextWeak)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading).padding(12)
-        .background(Color.bfBgElevated).clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.bfBorder, lineWidth: 0.5))
-    }
-}
+// DarkAllTimeStat → use BFStatBox from Atoms.swift
+private typealias DarkAllTimeStat = BFStatBox
 
 struct DarkSettingsCard: View {
     let onSignOut: () -> Void
@@ -313,27 +297,8 @@ struct DarkSettingsCard: View {
     }
 }
 
-private struct DarkSettingRow: View {
-    let icon: String
-    let label: String
-    let value: String
-    var valueColor: Color = Color(hex: "#555555")
-    var body: some View {
-        Button(action: {}) {
-            HStack(spacing: 12) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 9).fill(Color.bfPrimary.opacity(0.12)).frame(width: 32, height: 32)
-                    Image(systemName: icon).font(.system(size: 15)).foregroundColor(.bfPrimary)
-                }
-                Text(label).font(.system(size: 13, weight: .medium)).foregroundColor(.white)
-                Spacer()
-                if !value.isEmpty { Text(value).font(.system(size: 12)).foregroundColor(valueColor) }
-                Image(systemName: "chevron.right").font(.system(size: 12)).foregroundColor(.bfTextMuted)
-            }
-            .padding(.horizontal, 18).padding(.vertical, 13)
-        }
-    }
-}
+// DarkSettingRow → use BFSettingRow from Molecules.swift
+private typealias DarkSettingRow = BFSettingRow
 
 struct EditProfileSheet: View {
     @Binding var name: String

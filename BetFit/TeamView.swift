@@ -56,26 +56,12 @@ struct TeamView: View {
                             Text("Members").font(.system(size: 13, weight: .bold)).foregroundColor(.white)
                                 .padding(.horizontal, 18).padding(.top, 16).padding(.bottom, 12)
                             ForEach(Array(members.enumerated()), id: \.element.id) { index, member in
-                                VStack(spacing: 0) {
-                                    HStack(spacing: 12) {
-                                        Circle().fill(member.avatarColor).frame(width: 42, height: 42)
-                                            .overlay(Text(member.initials).font(.system(size: 14, weight: .bold)).foregroundColor(member.textColor))
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(member.name).font(.system(size: 13, weight: .semibold)).foregroundColor(.white)
-                                            Text(index == 0 ? "@sajesh · You" : "@johntobin").font(.system(size: 11)).foregroundColor(.bfTextMuted)
-                                        }
-                                        Spacer()
-                                        VStack(alignment: .trailing, spacing: 2) {
-                                            Text(member.steps.formatted()).font(.system(size: 13, weight: .bold)).foregroundColor(.white)
-                                            Text("steps").font(.system(size: 10)).foregroundColor(.bfTextMuted)
-                                            Text("↑ Active").font(.system(size: 9, weight: .bold)).foregroundColor(.bfPrimary)
-                                                .padding(.horizontal, 7).padding(.vertical, 2)
-                                                .background(Color.bfPrimary.opacity(0.12)).clipShape(Capsule())
-                                        }
-                                    }
-                                    .padding(.horizontal, 18).padding(.vertical, 12)
-                                    if index < members.count - 1 { Divider().background(Color.bfBorder).padding(.horizontal, 18) }
-                                }
+                                BFMemberRow(
+                                    member: member,
+                                    handle: index == 0 ? "@sajesh" : "@johntobin",
+                                    isYou: index == 0,
+                                    showDivider: index < members.count - 1
+                                )
                             }
                             Spacer().frame(height: 16)
                         }
@@ -98,14 +84,7 @@ struct TeamView: View {
                                     Text("\(Int(goalProgress * 100))% · \(totalSteps.formatted()) / \(dailyGoalSteps.formatted())")
                                         .font(.system(size: 11, weight: .semibold)).foregroundColor(.white)
                                 }
-                                GeometryReader { geo in
-                                    ZStack(alignment: .leading) {
-                                        Capsule().fill(Color.bfPrimary.opacity(0.15)).frame(height: 7)
-                                        Capsule().fill(Color.bfPrimary).frame(width: geo.size.width * goalProgress, height: 7)
-                                            .animation(.easeOut(duration: 0.8), value: goalProgress)
-                                    }
-                                }
-                                .frame(height: 7)
+                                BFProgressBar(progress: goalProgress)
                             }
                         }
                         .padding(16).background(Color.bfBgRaised).clipShape(RoundedRectangle(cornerRadius: 20))
@@ -137,26 +116,8 @@ struct TeamView: View {
                             }
 
                             VStack(spacing: 8) {
-                                Button(action: shareInviteLink) {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: "square.and.arrow.up")
-                                        Text("Share invite link")
-                                    }
-                                    .font(.system(size: 13, weight: .semibold)).foregroundColor(.white)
-                                    .frame(maxWidth: .infinity).frame(height: 44)
-                                    .background(Color.bfBgElevated).clipShape(Capsule())
-                                    .overlay(Capsule().stroke(Color.bfBorder, lineWidth: 0.5))
-                                }
-                                Button(action: shareViaWhatsApp) {
-                                    HStack(spacing: 8) {
-                                        Image(systemName: "message.fill")
-                                        Text("Send via WhatsApp")
-                                    }
-                                    .font(.system(size: 13, weight: .semibold)).foregroundColor(.white)
-                                    .frame(maxWidth: .infinity).frame(height: 44)
-                                    .background(Color.bfBgElevated).clipShape(Capsule())
-                                    .overlay(Capsule().stroke(Color.bfBorder, lineWidth: 0.5))
-                                }
+                                BFButton(label: "Share invite link", variant: .secondary, fullWidth: true, height: 44, action: shareInviteLink)
+                                BFButton(label: "Send via WhatsApp", variant: .secondary, fullWidth: true, height: 44, action: shareViaWhatsApp)
                             }
                         }
                         .padding(18).background(Color.bfBgRaised).clipShape(RoundedRectangle(cornerRadius: 20))
@@ -165,25 +126,12 @@ struct TeamView: View {
                         // Challenge info
                         VStack(alignment: .leading, spacing: 12) {
                             Text("\(challengeName) · \(company)").font(.system(size: 13, weight: .bold)).foregroundColor(.white)
-                            ForEach([
-                                ("calendar", "Challenge ends", endDate),
-                                ("person.2.fill", "Teams competing", "\(totalTeams) teams"),
-                                ("target", "Daily team goal", "\(dailyGoalSteps.formatted()) steps"),
-                                ("trophy.fill", "Your rank", "#\(rank) of \(totalTeams)"),
-                            ], id: \.0) { item in
-                                HStack(spacing: 10) {
-                                    ZStack {
-                                        RoundedRectangle(cornerRadius: 8).fill(Color.bfPrimary.opacity(0.12)).frame(width: 30, height: 30)
-                                        Image(systemName: item.0).font(.system(size: 14)).foregroundColor(.bfPrimary)
-                                    }
-                                    Text(item.1).font(.system(size: 12)).foregroundColor(.bfTextWeak)
-                                    Spacer()
-                                    Text(item.2).font(.system(size: 12, weight: .semibold)).foregroundColor(.white)
-                                }
-                            }
+                            BFInfoRow(icon: "calendar",      label: "Challenge ends",  value: endDate)
+                            BFInfoRow(icon: "person.2.fill", label: "Teams competing", value: "\(totalTeams) teams")
+                            BFInfoRow(icon: "target",        label: "Daily team goal", value: "\(dailyGoalSteps.formatted()) steps")
+                            BFInfoRow(icon: "trophy.fill",   label: "Your rank",       value: "#\(rank) of \(totalTeams)")
                         }
-                        .padding(16).background(Color.bfBgRaised).clipShape(RoundedRectangle(cornerRadius: 20))
-                        .overlay(RoundedRectangle(cornerRadius: 20).stroke(Color.bfBorder, lineWidth: 0.5))
+                        .bfCard()
                     }
                     .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 100)
                 }
@@ -233,28 +181,9 @@ struct TeamView: View {
     }
 }
 
-private struct DarkTeamStatBox: View {
-    let value: String
-    let label: String
-    var body: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(value).font(.system(size: 17, weight: .bold)).foregroundColor(.white)
-            Text(label).font(.system(size: 10)).foregroundColor(.bfTextWeak)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading).padding(12)
-        .background(Color.bfBgElevated).clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(Color.bfBorder, lineWidth: 0.5))
-    }
-}
-
-struct ToastView: View {
-    let message: String
-    var body: some View {
-        Text(message).font(.system(size: 13, weight: .semibold)).foregroundColor(.black)
-            .padding(.horizontal, 20).padding(.vertical, 10)
-            .background(Color.bfPrimary).clipShape(Capsule())
-            .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 4)
-    }
-}
+// DarkTeamStatBox → use BFStatBox from Atoms.swift
+private typealias DarkTeamStatBox = BFStatBox
+// ToastView → use BFToast from Atoms.swift
+typealias ToastView = BFToast
 
 #Preview { TeamView() }

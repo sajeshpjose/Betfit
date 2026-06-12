@@ -89,14 +89,7 @@ struct DashboardView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Good morning 👋")
-                            .font(.system(size: 17, weight: .bold))
-                            .foregroundColor(.white)
-                        Text(Date().formatted(.dateTime.weekday(.abbreviated).month().day()))
-                            .font(.system(size: 12))
-                            .foregroundColor(.bfTextWeak)
-                    }
+                    Text("BetFit").font(.system(size: 22, weight: .bold)).foregroundColor(.bfPrimary)
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { Task { await sync.syncToday(challengeId: challengeId) } }) {
@@ -124,20 +117,8 @@ struct DashboardView: View {
     }
 }
 
-// ── Section label
-struct SectionLabel: View {
-    let text: String
-    init(_ text: String) { self.text = text }
-    var body: some View {
-        Text(text)
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundColor(.bfTextMuted)
-            .textCase(.uppercase)
-            .tracking(0.6)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, 4)
-    }
-}
+// SectionLabel → use BFSectionLabel from Atoms.swift
+typealias SectionLabel = BFSectionLabel
 
 // ============================================================
 // MARK: - Step Ring Card
@@ -178,14 +159,7 @@ struct StepRingCard: View {
                         Text("Calories").font(.system(size: 10)).foregroundColor(.bfTextWeak)
                     }
                 }
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Color.bfPrimary.opacity(0.15)).frame(height: 5)
-                        Capsule().fill(Color.bfPrimary).frame(width: geo.size.width * progress, height: 5)
-                            .animation(.easeOut(duration: 1.0), value: progress)
-                    }
-                }
-                .frame(height: 5)
+                BFProgressBar(progress: progress, height: 5)
                 Text("\(Int(progress * 100))% of daily goal").font(.system(size: 10)).foregroundColor(.bfTextWeak)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -238,13 +212,7 @@ struct DarkTeamCard: View {
                     Spacer()
                     Text("\(Int(progress * 100))% of goal").font(.system(size: 11)).foregroundColor(.bfTextMuted)
                 }
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(Color.white.opacity(0.08)).frame(height: 5)
-                        Capsule().fill(Color.bfPrimary).frame(width: geo.size.width * progress, height: 5)
-                    }
-                }
-                .frame(height: 5)
+                BFProgressBar(progress: progress, height: 5)
             }
         }
         .padding(16)
@@ -384,32 +352,23 @@ struct DarkMiniLeaderboard: View {
                 Spacer()
                 Text("See all →").font(.system(size: 11, weight: .medium)).foregroundColor(.bfTextWeak)
             }
-            .padding(.horizontal, 16).padding(.top, 16).padding(.bottom, 12)
+            .padding(.horizontal, 16).padding(.top, 16).padding(.bottom, 8)
 
-            ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
-                VStack(spacing: 0) {
-                    HStack(spacing: 10) {
-                        Text("\(row.rank)").font(.system(size: 13, weight: .bold)).foregroundColor(.white).frame(width: 20, alignment: .center)
-                        HStack(spacing: -6) {
-                            Circle().fill(Color.bfPrimary.opacity(0.3)).frame(width: 26, height: 26)
-                            Circle().fill(Color(hex: "#2A2A2A")).frame(width: 26, height: 26)
-                                .overlay(Circle().stroke(row.isYou ? Color(hex: "#1A1A1A") : Color.bfBgRaised, lineWidth: 1.5))
-                        }
-                        Text(row.teamName + (row.isYou ? " · You" : ""))
-                            .font(.system(size: 12, weight: row.isYou ? .semibold : .medium))
-                            .foregroundColor(row.isYou ? .bfPrimary : .white)
-                        Spacer()
-                        Text(row.steps.formatted()).font(.system(size: 12, weight: .bold)).foregroundColor(.white)
-                    }
-                    .padding(.horizontal, 16).padding(.vertical, 10)
-                    .background(row.isYou ? Color.bfPrimary.opacity(0.08) : Color.bfBgRaised)
-
-                    if index < rows.count - 1 {
-                        Divider().background(Color.bfBorder).padding(.horizontal, 16)
-                    }
+            VStack(spacing: 6) {
+                ForEach(rows) { row in
+                    BFLeaderboardRow(
+                        rank: row.rank,
+                        teamName: row.teamName,
+                        member1: "", member2: "",
+                        steps: row.steps,
+                        distanceKm: 0,
+                        isYou: row.isYou,
+                        compact: true
+                    )
                 }
             }
-            Spacer().frame(height: 16)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
         }
         .background(Color.bfBgRaised)
         .clipShape(RoundedRectangle(cornerRadius: 16))

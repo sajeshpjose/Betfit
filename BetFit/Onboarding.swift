@@ -102,37 +102,7 @@ struct StepDots: View {
 }
 
 // ============================================================
-// MARK: - Primary Button
-// ============================================================
-
-struct BFButton: View {
-    let title: String
-    let action: () -> Void
-    var style: ButtonStyle = .primary
-
-    enum ButtonStyle { case primary, secondary }
-
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundColor(style == .primary ? .bfBlack : .bfTextWeak)
-                .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(
-                    style == .primary
-                        ? Color.bfPrimary
-                        : Color.bfBgRaised
-                )
-                .clipShape(Capsule())
-                .overlay(
-                    style == .secondary
-                        ? Capsule().stroke(Color.bfBorder, lineWidth: 0.5)
-                        : nil
-                )
-        }
-    }
-}
+// BFButton lives in Atoms.swift — usage below maps title: → label:
 
 // ============================================================
 // MARK: - Step 1: Welcome
@@ -195,8 +165,8 @@ struct WelcomeStep: View {
                 Spacer()
 
                 VStack(spacing: 12) {
-                    BFButton(title: "Get started", action: onNext, style: .primary)
-                    BFButton(title: "I already have an account", action: onNext, style: .secondary)
+                    BFButton(label: "Get started", variant: .primary, fullWidth: true, height: 52, action: onNext)
+                    BFButton(label: "I already have an account", variant: .secondary, fullWidth: true, height: 52, action: onNext)
                 }
             }
             .padding(.horizontal, 24)
@@ -309,7 +279,7 @@ struct FeaturesStep: View {
             }
 
             // ── CTA
-            BFButton(title: "Continue", action: onNext, style: .primary)
+            BFButton(label: "Continue", variant: .primary, fullWidth: true, height: 52, action: onNext)
                 .padding(.horizontal, 24)
                 .padding(.bottom, 40)
                 .padding(.top, 16)
@@ -420,14 +390,14 @@ struct HealthPermissionsStep: View {
             Spacer()
 
             VStack(spacing: 12) {
-                BFButton(title: "Allow Health access", action: {
+                BFButton(label: "Allow Health access", variant: .primary, fullWidth: true, height: 52, action: {
                     Task {
                         try? await HealthKitManager.shared.requestAuthorization()
                         onNext()
                     }
-                }, style: .primary)
+                })
 
-                BFButton(title: "Skip for now", action: onSkip, style: .secondary)
+                BFButton(label: "Skip for now", variant: .secondary, fullWidth: true, height: 52, action: onSkip)
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 40)
