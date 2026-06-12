@@ -10,9 +10,22 @@
 		F49656D12FDB3CF10032A0DB /* BetFit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BetFit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F4516F232FDB5DBD004B1C15 /* Exceptions for "BetFit" folder in "BetFit" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = F49656D02FDB3CF10032A0DB /* BetFit */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F49656D32FDB3CF10032A0DB /* BetFit */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F4516F232FDB5DBD004B1C15 /* Exceptions for "BetFit" folder in "BetFit" target */,
+			);
 			path = BetFit;
 			sourceTree = "<group>";
 		};
@@ -33,6 +46,7 @@
 			isa = PBXGroup;
 			children = (
 				F49656D32FDB3CF10032A0DB /* BetFit */,
+				F49656F22FDB514E0032A0DB /* Frameworks */,
 				F49656D22FDB3CF10032A0DB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -43,6 +57,13 @@
 				F49656D12FDB3CF10032A0DB /* BetFit.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		F49656F22FDB514E0032A0DB /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -94,6 +115,8 @@
 			);
 			mainGroup = F49656C82FDB3CF10032A0DB;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F49656D22FDB3CF10032A0DB /* Products */;
 			projectDirPath = "";
@@ -158,6 +181,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_ENTITLEMENTS = "BetFit/BetFit.entitlements\n";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 894HMB2J58;
@@ -222,6 +246,7 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_ENTITLEMENTS = "BetFit/BetFit.entitlements\n";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 894HMB2J58;
@@ -251,11 +276,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BetFit/BetFit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 894HMB2J58;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BetFit/Info.plist;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Betfit uses your step count and walking distance to track your progress in team competitions and your Couch to 5K program.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Betfit may write workout data to Apple Health when you complete a Couch to 5K session.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -266,7 +295,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.yello.BetFit.BetFit;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yello.betfit;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -283,11 +312,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BetFit/BetFit.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 894HMB2J58;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = BetFit/Info.plist;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "Betfit uses your step count and walking distance to track your progress in team competitions and your Couch to 5K program.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Betfit may write workout data to Apple Health when you complete a Couch to 5K session.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -298,7 +331,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.yello.BetFit.BetFit;
+				PRODUCT_BUNDLE_IDENTIFIER = com.yello.betfit;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
