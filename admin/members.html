@@ -67,8 +67,8 @@
 
   async function loadMembers() {
     try {
-      const [members, logs] = await Promise.all([
-        get('company_members?select=*,users(name),companies(name)&order=joined_at.desc'),
+      const [profiles, logs] = await Promise.all([
+        get('profiles?order=created_at.desc'),
         get('step_logs?select=user_id,step_count')
       ])
 
@@ -76,7 +76,13 @@
       stepTotals = {}
       ;(logs||[]).forEach(l => { stepTotals[l.user_id] = (stepTotals[l.user_id]||0)+(l.step_count||0) })
 
-      allMembers = members || []
+      allMembers = (profiles || []).map(p => ({
+        users: { name: p.display_name },
+        companies: { name: p.company },
+        role: 'member',
+        user_id: p.id,
+        joined_at: p.created_at
+      }))
       document.getElementById('count-label').textContent = `(${allMembers.length})`
       renderTable(allMembers)
     } catch (err) {
