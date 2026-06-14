@@ -157,8 +157,8 @@
   async function loadChallenges() {
     try {
       const [data, teams] = await Promise.all([
-        get('challenges?select=*,companies(name)&order=created_at.desc'),
-        get('teams?select=id,challenge_id')
+        get('challenges?order=created_at.desc'),
+        get('challenge_teams?select=id,challenge_id')
       ])
 
       challenges = data || []
@@ -192,7 +192,7 @@
 
     tbody.innerHTML = challenges.map(c => {
       const status = getStatus(c.start_date, c.end_date)
-      const companyName = c.companies?.name || '—'
+      const companyName = c.company || '—'
       const count = teamCounts[c.id] || 0
       const typeLabel = c.type === 'steps' ? '👟 Steps' : '📍 Distance'
 
