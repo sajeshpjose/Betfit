@@ -98,7 +98,7 @@
     const from        = document.getElementById('filter-from').value
     const to          = document.getElementById('filter-to').value
 
-    let path = 'step_logs?select=*,users(name),challenges(name)&order=synced_at.desc&limit=100'
+    let path = 'step_logs?order=synced_at.desc&limit=100'
     if (challengeId) path += `&challenge_id=eq.${challengeId}`
     if (from)        path += `&log_date=gte.${from}`
     if (to)          path += `&log_date=lte.${to}`
@@ -119,8 +119,8 @@
 
       tbody.innerHTML = data.map(l => `
         <tr>
-          <td>${escHtml(l.users?.name || 'Unknown')}</td>
-          <td class="text-weak">${escHtml(l.challenges?.name || '—')}</td>
+          <td><code style="font-size:11px;">${escHtml(l.user_id)}</code></td>
+          <td class="text-weak"><code style="font-size:11px;">${escHtml(l.challenge_id)}</code></td>
           <td class="text-weak">${formatDate(l.log_date)}</td>
           <td><strong>${(l.step_count||0).toLocaleString()}</strong></td>
           <td class="text-weak">${l.distance_km ? Number(l.distance_km).toFixed(2)+' km' : '—'}</td>
