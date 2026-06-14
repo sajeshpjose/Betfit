@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Terms & Conditions — BetFit</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:       #D5FF45;
+      --bg:            #0A0A0A;
+      --bg-raised:     #141414;
+      --bg-elevated:   #1C1C1C;
+      --border:        rgba(255,255,255,0.10);
+      --border-light:  rgba(255,255,255,0.06);
+      --text:          #FFFFFF;
+      --text-weak:     #888888;
+      --text-muted:    #444444;
+      --success:       #4CAF50;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      height: 64px;
+      background: rgba(10,10,10,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo-mark svg { width: 18px; height: 18px; }
+
+    .logo-text {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+
+    .nav-pill {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-weak);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 14px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      padding: 100px 40px 72px;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .hero-eyebrow::before {
+      content: "";
+      display: block;
+      width: 20px;
+      height: 2px;
+      background: var(--primary);
+      border-radius: 2px;
+    }
+
+    .hero h1 {
+      font-size: clamp(36px, 5vw, 56px);
+      font-weight: 800;
+      letter-spacing: -1.5px;
+      line-height: 1.05;
+      margin-bottom: 20px;
+      color: var(--text);
+    }
+
+    .hero h1 span { color: var(--primary); }
+
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+    }
+
+    .meta-item {
+      font-size: 13px;
+      color: var(--text-weak);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .meta-item svg { opacity: 0.5; }
+
+    /* ── DIVIDER ── */
+    .divider {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0 40px;
+    }
+
+    .divider hr {
+      border: none;
+      border-top: 1px solid var(--border-light);
+    }
+
+    /* ── TOC ── */
+    .toc-wrapper {
+      max-width: 760px;
+      margin: 48px auto;
+      padding: 0 40px;
+    }
+
+    .toc {
+      background: var(--bg-raised);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px 32px;
+    }
+
+    .toc-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .toc ol {
+      list-style: none;
+      counter-reset: toc-counter;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 32px;
+    }
+
+    @media (max-width: 520px) {
+      .toc ol { grid-template-columns: 1fr; }
+    }
+
+    .toc li {
+      counter-increment: toc-counter;
+    }
+
+    .toc li a {
+      font-size: 14px;
+      color: var(--text-weak);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 0;
+      transition: color 0.15s;
+    }
+
+    .toc li a::before {
+      content: counter(toc-counter, decimal-leading-zero);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+      min-width: 22px;
+    }
+
+    .toc li a:hover { color: var(--primary); }
+    .toc li a:hover::before { color: var(--primary); }
+
+    /* ── CONTENT ── */
+    .content {
+      max-width: 760px;
+      margin: 0 auto 80px;
+      padding: 0 40px;
+    }
+
+    .section {
+      padding: 48px 0;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .section:last-child { border-bottom: none; }
+
+    .section-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .section-number {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--primary);
+      font-variant-numeric: tabular-nums;
+      margin-top: 2px;
+    }
+
+    .section h2 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .section p {
+      font-size: 15px;
+      color: rgba(255,255,255,0.65);
+      line-height: 1.75;
+      margin-bottom: 16px;
+    }
+
+    .section p:last-child { margin-bottom: 0; }
+
+    .section ul, .section ol {
+      padding-left: 0;
+      list-style: none;
+      margin-bottom: 16px;
+    }
+
+    .section ul li, .section ol li {
+      font-size: 15px;
+      color: rgba(255,255,255,0.65);
+      line-height: 1.75;
+      padding: 6px 0 6px 24px;
+      position: relative;
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .section ul li:last-child, .section ol li:last-child { border-bottom: none; }
+
+    .section ul li::before {
+      content: "—";
+      position: absolute;
+      left: 0;
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .section ol {
+      counter-reset: list-counter;
+    }
+
+    .section ol li {
+      counter-increment: list-counter;
+    }
+
+    .section ol li::before {
+      content: counter(list-counter) ".";
+      position: absolute;
+      left: 0;
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .highlight-box {
+      background: rgba(213,255,69,0.06);
+      border: 1px solid rgba(213,255,69,0.18);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin: 20px 0;
+    }
+
+    .highlight-box p {
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 0;
+      font-size: 14px;
+    }
+
+    .highlight-box strong {
+      color: var(--primary);
+    }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border-light);
+      padding: 48px 40px;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-brand {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.2px;
+    }
+
+    .footer-brand span { color: var(--primary); }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .footer-links a {
+      font-size: 13px;
+      color: var(--text-weak);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .footer-links a:hover { color: var(--text); }
+
+    .footer-copy {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 16px;
+      text-align: center;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      nav { padding: 0 20px; }
+      .hero, .toc-wrapper, .content, .divider, footer { padding-left: 20px; padding-right: 20px; }
+      .hero { padding-top: 64px; }
+      .toc { padding: 20px; }
+      .footer-inner { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="#">
+      <div class="logo-mark">
+        <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M3 9h3l2-5 3 10 2-5h2" stroke="#000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="logo-text">BetFit</span>
+    </a>
+    <span class="nav-pill">Legal</span>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="hero-eyebrow">Legal Document</div>
+    <h1>Terms &amp; <span>Conditions</span></h1>
+    <p style="font-size:16px; color:rgba(255,255,255,0.5); margin-top:12px; max-width:520px;">
+      Please read these terms carefully before using BetFit. By creating an account or using the app, you agree to be bound by these terms.
+    </p>
+    <div class="hero-meta">
+      <span class="meta-item">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="2" width="12" height="11" rx="2" stroke="#888" stroke-width="1.2"/><path d="M4 1v2M10 1v2M1 5h12" stroke="#888" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Last updated: June 13, 2026
+      </span>
+      <span class="meta-item">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="#888" stroke-width="1.2"/><path d="M7 4v3.5l2 1.5" stroke="#888" stroke-width="1.2" stroke-linecap="round"/></svg>
+        ~8 min read
+      </span>
+      <span class="meta-item">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1l1.5 3H12l-2.8 2 1 3.2L7 7.5l-3.2 1.7 1-3.2L2 4h3.5L7 1z" stroke="#888" stroke-width="1.2" stroke-linejoin="round"/></svg>
+        Version 1.0
+      </span>
+    </div>
+  </header>
+
+  <div class="divider"><hr /></div>
+
+  <!-- TABLE OF CONTENTS -->
+  <div class="toc-wrapper">
+    <div class="toc">
+      <div class="toc-title">Contents</div>
+      <ol>
+        <li><a href="#acceptance">Acceptance of Terms</a></li>
+        <li><a href="#eligibility">Eligibility</a></li>
+        <li><a href="#account">Account &amp; Registration</a></li>
+        <li><a href="#service">Description of Service</a></li>
+        <li><a href="#health">Health &amp; Fitness Data</a></li>
+        <li><a href="#challenges">Challenges &amp; Competitions</a></li>
+        <li><a href="#conduct">User Conduct</a></li>
+        <li><a href="#privacy">Privacy &amp; Data</a></li>
+        <li><a href="#intellectual">Intellectual Property</a></li>
+        <li><a href="#disclaimer">Disclaimers</a></li>
+        <li><a href="#liability">Limitation of Liability</a></li>
+        <li><a href="#termination">Termination</a></li>
+        <li><a href="#changes">Changes to Terms</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <div class="section" id="acceptance">
+      <div class="section-header">
+        <div class="section-number">01</div>
+        <h2>Acceptance of Terms</h2>
+      </div>
+      <p>By downloading, installing, or using the BetFit mobile application ("App") or any related services (collectively, the "Service"), you ("User") agree to be legally bound by these Terms and Conditions ("Terms"), our Privacy Policy, and any additional guidelines or rules posted within the Service.</p>
+      <p>If you do not agree to these Terms, do not access or use the Service. Your continued use of the Service after any modifications to these Terms constitutes your acceptance of the revised Terms.</p>
+      <div class="highlight-box">
+        <p><strong>Important:</strong> These Terms constitute a legally binding agreement between you and BetFit. Please read them in full before using the app.</p>
+      </div>
+    </div>
+
+    <div class="section" id="eligibility">
+      <div class="section-header">
+        <div class="section-number">02</div>
+        <h2>Eligibility</h2>
+      </div>
+      <p>To use BetFit, you must:</p>
+      <ul>
+        <li>Be at least 18 years of age, or the age of majority in your jurisdiction</li>
+        <li>Have the legal capacity to enter into a binding agreement</li>
+        <li>Not be prohibited from using the Service under applicable law</li>
+        <li>Have a valid company or organisation code provided by your employer or group admin</li>
+        <li>Own or have authorised access to a compatible iOS device with HealthKit capabilities</li>
+      </ul>
+      <p>By using the Service, you represent and warrant that you meet all eligibility requirements listed above.</p>
+    </div>
+
+    <div class="section" id="account">
+      <div class="section-header">
+        <div class="section-number">03</div>
+        <h2>Account &amp; Registration</h2>
+      </div>
+      <p>To access BetFit's features, you must create an account using Sign in with Apple or Sign in with Google. By creating an account, you agree to:</p>
+      <ul>
+        <li>Provide accurate, current, and complete information during registration and onboarding</li>
+        <li>Maintain and promptly update your account information</li>
+        <li>Keep your authentication credentials secure and confidential</li>
+        <li>Notify us immediately of any unauthorised use of your account</li>
+        <li>Accept responsibility for all activity that occurs under your account</li>
+      </ul>
+      <p>BetFit reserves the right to suspend or terminate accounts that contain false information, violate these Terms, or are found to be inactive for an extended period.</p>
+    </div>
+
+    <div class="section" id="service">
+      <div class="section-header">
+        <div class="section-number">04</div>
+        <h2>Description of Service</h2>
+      </div>
+      <p>BetFit is a social fitness platform that enables users to participate in step-count and distance-based challenges with colleagues and teammates. The Service includes:</p>
+      <ul>
+        <li>Creation and participation in fitness challenges (steps, distance, C25K)</li>
+        <li>Team formation and collaborative challenge tracking</li>
+        <li>Leaderboards and progress visualisation</li>
+        <li>Integration with Apple HealthKit for automatic activity syncing</li>
+        <li>Social features including team messaging and achievement sharing</li>
+      </ul>
+      <p>We reserve the right to modify, suspend, or discontinue any aspect of the Service at any time, with or without notice. BetFit shall not be liable to you or any third party for any modification, suspension, or discontinuance of the Service.</p>
+    </div>
+
+    <div class="section" id="health">
+      <div class="section-header">
+        <div class="section-number">05</div>
+        <h2>Health &amp; Fitness Data</h2>
+      </div>
+      <div class="highlight-box">
+        <p><strong>Medical Disclaimer:</strong> BetFit is not a medical device or service. The information and data provided through the app are for general wellness and motivational purposes only. Always consult a qualified healthcare professional before starting any new fitness programme.</p>
+      </div>
+      <p>BetFit integrates with Apple HealthKit to read your step count and walking/running distance data. By granting HealthKit permissions, you authorise BetFit to:</p>
+      <ul>
+        <li>Read step count and distance data from Apple Health</li>
+        <li>Sync your activity data to our servers for challenge tracking</li>
+        <li>Display your aggregated fitness statistics within the app</li>
+        <li>Share relevant metrics (e.g. daily steps) with your challenge team members</li>
+      </ul>
+      <p>You may revoke HealthKit access at any time through your device's Settings app. Revoking access will prevent activity data from syncing but will not delete previously submitted data.</p>
+      <p>BetFit does not sell or share your health data with third-party advertisers. Refer to our Privacy Policy for full details on data handling.</p>
+    </div>
+
+    <div class="section" id="challenges">
+      <div class="section-header">
+        <div class="section-number">06</div>
+        <h2>Challenges &amp; Competitions</h2>
+      </div>
+      <p>BetFit facilitates fitness challenges between users within the same organisation. With respect to challenges, you agree that:</p>
+      <ul>
+        <li>All step and distance data submitted must be genuine and measured by a compatible device</li>
+        <li>Manipulation, falsification, or third-party generation of fitness data is strictly prohibited</li>
+        <li>Challenge results are determined solely by verified HealthKit data synced through the app</li>
+        <li>BetFit's determination of challenge outcomes is final and binding</li>
+        <li>Any in-app rewards or prizes are subject to the specific challenge rules set by your organisation</li>
+        <li>BetFit is not responsible for any employer-offered incentives, rewards, or penalties linked to challenge performance</li>
+      </ul>
+      <p>BetFit reserves the right to disqualify users found to be manipulating their activity data or engaging in any form of cheating.</p>
+    </div>
+
+    <div class="section" id="conduct">
+      <div class="section-header">
+        <div class="section-number">07</div>
+        <h2>User Conduct</h2>
+      </div>
+      <p>You agree not to use the Service to:</p>
+      <ul>
+        <li>Harass, abuse, threaten, or intimidate other users</li>
+        <li>Post or transmit offensive, defamatory, or inappropriate content</li>
+        <li>Impersonate any person or entity, or misrepresent your affiliation</li>
+        <li>Attempt to gain unauthorised access to other accounts or our backend systems</li>
+        <li>Reverse engineer, decompile, or disassemble any part of the Service</li>
+        <li>Use automated tools or bots to interact with the Service</li>
+        <li>Violate any applicable local, national, or international law or regulation</li>
+      </ul>
+      <p>Violations of this section may result in immediate account suspension or permanent termination at our sole discretion.</p>
+    </div>
+
+    <div class="section" id="privacy">
+      <div class="section-header">
+        <div class="section-number">08</div>
+        <h2>Privacy &amp; Data</h2>
+      </div>
+      <p>Your privacy is important to us. Our collection, use, and sharing of your personal information is governed by our Privacy Policy, which is incorporated into these Terms by reference.</p>
+      <p>Key points regarding your data:</p>
+      <ul>
+        <li>Profile data (name, username, avatar) is visible to members of your challenge team</li>
+        <li>Activity data (daily steps, distance) is shared with team members in active challenges</li>
+        <li>Your email address is never publicly displayed within the app</li>
+        <li>Data is stored securely on Supabase infrastructure with row-level security</li>
+        <li>You may request deletion of your account and associated data at any time</li>
+      </ul>
+    </div>
+
+    <div class="section" id="intellectual">
+      <div class="section-header">
+        <div class="section-number">09</div>
+        <h2>Intellectual Property</h2>
+      </div>
+      <p>All content, features, and functionality of BetFit — including but not limited to the app design, graphics, logos, text, and source code — are the exclusive property of BetFit and its licensors, and are protected by copyright, trademark, and other intellectual property laws.</p>
+      <p>You are granted a limited, non-exclusive, non-transferable licence to use the Service for personal, non-commercial purposes, subject to these Terms. You may not:</p>
+      <ul>
+        <li>Copy, modify, or distribute any part of the Service without our written consent</li>
+        <li>Use the BetFit name, logo, or branding in any way that implies endorsement</li>
+        <li>Create derivative works based on the Service</li>
+      </ul>
+      <p>Any content you submit (e.g. avatar images, display names) remains your property, but you grant BetFit a worldwide, royalty-free licence to use it within the Service.</p>
+    </div>
+
+    <div class="section" id="disclaimer">
+      <div class="section-header">
+        <div class="section-number">10</div>
+        <h2>Disclaimers</h2>
+      </div>
+      <p>THE SERVICE IS PROVIDED ON AN "AS IS" AND "AS AVAILABLE" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.</p>
+      <p>BetFit does not warrant that:</p>
+      <ul>
+        <li>The Service will be uninterrupted, error-free, or secure at all times</li>
+        <li>Activity data synced from HealthKit will be 100% accurate</li>
+        <li>The Service will meet your specific fitness or business requirements</li>
+        <li>Any defects or errors in the Service will be corrected within a specific timeframe</li>
+      </ul>
+      <p>You use the Service at your own risk. BetFit assumes no liability for injuries, health issues, or other damages arising from participation in challenges or physical activities prompted by use of the app.</p>
+    </div>
+
+    <div class="section" id="liability">
+      <div class="section-header">
+        <div class="section-number">11</div>
+        <h2>Limitation of Liability</h2>
+      </div>
+      <p>TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, BETFIT AND ITS OFFICERS, DIRECTORS, EMPLOYEES, AND AGENTS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING OUT OF OR RELATED TO YOUR USE OF THE SERVICE.</p>
+      <p>In no event shall BetFit's total liability to you for all claims exceed the greater of (a) the amount you paid to use the Service in the twelve months preceding the claim, or (b) $100 USD.</p>
+      <p>Some jurisdictions do not allow the exclusion or limitation of certain damages, so the above limitations may not apply to you in full.</p>
+    </div>
+
+    <div class="section" id="termination">
+      <div class="section-header">
+        <div class="section-number">12</div>
+        <h2>Termination</h2>
+      </div>
+      <p>You may terminate your account at any time by contacting us or using the account deletion option within the app settings. Upon termination:</p>
+      <ul>
+        <li>Your access to the Service will be revoked immediately</li>
+        <li>Your profile and activity history will be scheduled for deletion within 30 days</li>
+        <li>Data shared with your team during active challenges may be retained in anonymised, aggregate form</li>
+      </ul>
+      <p>BetFit may suspend or terminate your account at any time, with or without cause, with or without notice. We will make reasonable efforts to notify you of termination via email unless we are legally prohibited from doing so or if doing so would harm other users.</p>
+    </div>
+
+    <div class="section" id="changes">
+      <div class="section-header">
+        <div class="section-number">13</div>
+        <h2>Changes to Terms</h2>
+      </div>
+      <p>We reserve the right to update or modify these Terms at any time. When we make material changes, we will:</p>
+      <ul>
+        <li>Post the updated Terms in the app and on our website</li>
+        <li>Update the "Last updated" date at the top of this document</li>
+        <li>Send an in-app notification or email for significant changes</li>
+      </ul>
+      <p>Your continued use of the Service after the effective date of any changes constitutes your acceptance of the revised Terms. If you do not agree to the updated Terms, you must stop using the Service and delete your account.</p>
+    </div>
+
+    <div class="section" id="contact">
+      <div class="section-header">
+        <div class="section-number">14</div>
+        <h2>Contact</h2>
+      </div>
+      <p>If you have any questions, concerns, or requests regarding these Terms, please contact us:</p>
+      <div class="highlight-box">
+        <p><strong>BetFit Support</strong><br/>
+        Email: <a href="mailto:support@betfit.app" style="color:var(--primary); text-decoration:none;">support@betfit.app</a><br/>
+        Subject line: "Terms &amp; Conditions Enquiry"</p>
+      </div>
+      <p>We aim to respond to all legal and privacy-related enquiries within 5 business days.</p>
+      <p style="margin-top:8px; font-size:13px; color:var(--text-muted);">These Terms shall be governed by and construed in accordance with the laws of the jurisdiction in which BetFit operates, without regard to its conflict of law provisions.</p>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">Bet<span>Fit</span></div>
+      </div>
+      <div class="footer-links">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Support</a>
+        <a href="#">App Store</a>
+      </div>
+    </div>
+    <p class="footer-copy">© 2026 BetFit. All rights reserved.</p>
+  </footer>
+
+</body>
+</html>
