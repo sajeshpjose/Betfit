@@ -39,13 +39,7 @@ struct DashboardView: View {
         }
     }
 
-    let teamMembers: [TeamMember] = [
-        TeamMember(initials: "SK", name: "You",     steps: 6241, avatarColor: .bfPrimary,            textColor: Color(hex: "#000000")),
-        TeamMember(initials: "JT", name: "John T.", steps: 8102, avatarColor: Color(hex: "#2A2A2A"), textColor: Color(hex: "#AAAAAA")),
-    ]
-
     var goalProgress: Double { min(Double(sync.todaySteps) / Double(dailyGoal), 1.0) }
-    var teamTotalSteps: Int  { teamMembers.reduce(0) { $0 + $1.steps } }
 
     var body: some View {
         NavigationStack {
@@ -72,15 +66,6 @@ struct DashboardView: View {
 
                         SectionLabel("Today")
                         StepRingCard(steps: sync.todaySteps, goal: dailyGoal, distanceKm: sync.todayDistanceKm, calories: Int(Double(sync.todaySteps) * 0.04), progress: goalProgress)
-
-                        SectionLabel("Your team")
-                        DarkTeamCard(teamName: "The Fast Pair", rank: 2, members: teamMembers, totalSteps: teamTotalSteps, goalSteps: 23000)
-
-                        SectionLabel("Challenge")
-                        DarkChallengeCard(challengeName: "June Wellness Sprint", company: "Acme Corp", daysLeft: 6, teamSteps: teamTotalSteps, rank: 2, behindBy: 980)
-
-                        SectionLabel("Couch to 5K")
-                        DarkC25KDashCard(day: 8, totalDays: 30)
 
                         SectionLabel("Leaderboard")
                         DarkMiniLeaderboard(rows: leaderboardRows)
