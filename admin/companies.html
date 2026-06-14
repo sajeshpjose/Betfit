@@ -29,12 +29,10 @@
     <table>
       <thead>
         <tr>
-          <th></th>
           <th>Name</th>
-          <th>Invite Code</th>
-          <th>Members</th>
           <th>Challenges</th>
-          <th>Created</th>
+          <th>Teams</th>
+          <th>Invite Code</th>
         </tr>
       </thead>
       <tbody id="companies-tbody">
@@ -99,17 +97,29 @@
 
   async function loadCompanies() {
     try {
-      const [data, members, challenges] = await Promise.all([
-        get('companies?select=*&order=created_at.desc'),
-        get('company_members?select=id,company_id'),
-        get('challenges?select=id,company_id')
+      // No company_members table — use challenge_team_members and challenges instead
+      const [challenges, teams] = await Promise.all([
+        get('challenges?select=id,company&order=created_at.desc'),
+        get('challenge_teams?select=id,challenge_id')
       ])
 
-      companies = data || []
-      memberCounts = {}; challengeCounts = {}
-      ;(members||[]).forEach(m => { memberCounts[m.company_id] = (memberCounts[m.company_id]||0)+1 })
-      ;(challenges||[]).forEach(c => { challengeCounts[c.company_id] = (challengeCounts[c.company_id]||0)+1 })
+      // Derive unique companies from the challenges.company text field
+      const companyMap = {}
+      ;(challenges||[]).forEach(c => {
+        const name = c.company || 'Unknown'
+        if (!companyMap[name]) companyMap[name] = { name, challenges: 0, teams: 0 }
+        companyMap[name].challenges++
+      })
 
+      // Count teams per company via challenge
+      const challengeCompanyMap = {}
+      ;(challenges||[]).forEach(c => { challengeCompanyMap[c.id] = c.company || 'Unknown' })
+      ;(teams||[]).forEach(t => {
+        const company = challengeCompanyMap[t.challenge_id]
+        if (company && companyMap[company]) companyMap[company].teams++
+      })
+
+      companies = Object.values(companyMap)
       renderTable()
     } catch (err) {
       showToast('Failed to load companies: ' + err.message, 'error')
@@ -121,69 +131,20 @@
     const tbody = document.getElementById('companies-tbody')
 
     if (companies.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><span class="empty-icon">🏢</span><p>No companies yet</p></div></td></tr>`
+      tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><span class="empty-icon">🏢</span><p>No companies yet — add a company field when creating a challenge</p></div></td></tr>`
       return
     }
 
-    tbody.innerHTML = companies.map(c => `
-      <tr class="expand-row" onclick="toggleExpand('${c.id}')" id="row-${c.id}">
-        <td style="width:24px; color:var(--text-muted); font-size:10px;" id="chevron-${c.id}">▶</td>
+    tbody.innerHTML = companies.map((c, i) => `
+      <tr>
         <td><strong>${escHtml(c.name)}</strong></td>
-        <td><span class="invite-code">${escHtml(c.invite_code||'—')}</span></td>
-        <td class="text-weak">${memberCounts[c.id]||0}</td>
-        <td class="text-weak">${challengeCounts[c.id]||0}</td>
-        <td class="text-weak">${formatDate(c.created_at)}</td>
-      </tr>
-      <tr class="expanded-content hidden" id="expanded-${c.id}">
-        <td colspan="6">
-          <div id="members-${c.id}" style="color:var(--text-muted); font-size:13px;">Loading members…</div>
-        </td>
+        <td class="text-weak">${c.challenges}</td>
+        <td class="text-weak">${c.teams}</td>
+        <td class="text-weak">—</td>
       </tr>
     `).join('')
   }
 
-  async function toggleExpand(id) {
-    const row = document.getElementById(`expanded-${id}`)
-    const chevron = document.getElementById(`chevron-${id}`)
-    const isOpen = !row.classList.contains('hidden')
-
-    // Close any open
-    document.querySelectorAll('.expanded-content').forEach(r => r.classList.add('hidden'))
-    document.querySelectorAll('[id^="chevron-"]').forEach(c => c.textContent = '▶')
-
-    if (!isOpen) {
-      row.classList.remove('hidden')
-      chevron.textContent = '▼'
-      loadMembers(id)
-    }
-  }
-
-  async function loadMembers(companyId) {
-    const container = document.getElementById(`members-${companyId}`)
-    try {
-      const members = await get(`company_members?company_id=eq.${companyId}&select=*,users(name)&order=joined_at.asc`)
-      if (!members || members.length === 0) {
-        container.innerHTML = '<em>No members yet</em>'; return
-      }
-      container.innerHTML = `
-        <div class="sub-table-wrapper">
-          <table>
-            <thead><tr><th>Name</th><th>Role</th><th>Joined</th></tr></thead>
-            <tbody>
-              ${members.map(m => `
-                <tr>
-                  <td>${escHtml(m.users?.name || 'Unknown')}</td>
-                  <td><span class="badge ${m.role==='admin'?'badge-active':'badge-upcoming'}">${m.role||'member'}</span></td>
-                  <td class="text-muted">${formatDate(m.joined_at)}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>`
-    } catch {
-      container.innerHTML = '<em style="color:var(--error)">Failed to load members</em>'
-    }
-  }
 
   function generateCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
