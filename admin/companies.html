@@ -97,14 +97,19 @@
 
   async function loadCompanies() {
     try {
-      // No company_members table — use challenge_team_members and challenges instead
-      const [challenges, teams] = await Promise.all([
+      const [companiesList, challenges, teams] = await Promise.all([
+        get('companies?order=created_at.desc'),
         get('challenges?select=id,company&order=created_at.desc'),
         get('challenge_teams?select=id,challenge_id')
       ])
 
-      // Derive unique companies from the challenges.company text field
+      // Start with companies from the companies table
       const companyMap = {}
+      ;(companiesList||[]).forEach(c => {
+        companyMap[c.name] = { name: c.name, challenges: 0, teams: 0 }
+      })
+
+      // Count challenges per company
       ;(challenges||[]).forEach(c => {
         const name = c.company || 'Unknown'
         if (!companyMap[name]) companyMap[name] = { name, challenges: 0, teams: 0 }
