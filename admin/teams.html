@@ -63,8 +63,8 @@
   async function loadTeams() {
     try {
       const [data, members, logs] = await Promise.all([
-        get('teams?select=*,challenges(name)&order=created_at.desc'),
-        get('team_members?select=id,team_id,user_id'),
+        get('challenge_teams?order=created_at.desc'),
+        get('challenge_team_members?select=id,challenge_team_id,user_id'),
         get('step_logs?select=user_id,challenge_id,step_count')
       ])
 
@@ -72,11 +72,11 @@
 
       // Member counts per team
       memberCounts = {}
-      const teamUserMap = {} // team_id → [user_ids]
+      const teamUserMap = {} // challenge_team_id → [user_ids]
       ;(members||[]).forEach(m => {
-        memberCounts[m.team_id] = (memberCounts[m.team_id]||0)+1
-        if (!teamUserMap[m.team_id]) teamUserMap[m.team_id] = []
-        teamUserMap[m.team_id].push(m.user_id)
+        memberCounts[m.challenge_team_id] = (memberCounts[m.challenge_team_id]||0)+1
+        if (!teamUserMap[m.challenge_team_id]) teamUserMap[m.challenge_team_id] = []
+        teamUserMap[m.challenge_team_id].push(m.user_id)
       })
 
       // Step totals: for each team, sum steps of its members in the team's challenge
@@ -108,7 +108,7 @@
       <tr class="expand-row" onclick="toggleExpand('${t.id}')">
         <td style="width:24px; color:var(--text-muted); font-size:10px;" id="chevron-${t.id}">▶</td>
         <td><strong>${escHtml(t.name)}</strong></td>
-        <td class="text-weak">${escHtml(t.challenges?.name || '—')}</td>
+        <td class="text-weak"><code style="font-size:11px;">${escHtml(t.challenge_id)}</code></td>
         <td class="text-weak">${memberCounts[t.id]||0}</td>
         <td class="text-weak">${fmtNum(stepTotals[t.id]||0)}</td>
         <td><span class="invite-code">${escHtml(t.invite_code||'—')}</span></td>
@@ -138,7 +138,7 @@
     const container = document.getElementById(`team-members-${teamId}`)
     const team = teams.find(t => t.id === teamId)
     try {
-      const members = await get(`team_members?team_id=eq.${teamId}&select=*,users(name)&order=joined_at.asc`)
+      const members = await get(`challenge_team_members?challenge_team_id=eq.${teamId}&select=*&order=created_at.asc`)
       if (!members || members.length === 0) {
         container.innerHTML = '<em>No members</em>'; return
       }
@@ -155,13 +155,13 @@
       container.innerHTML = `
         <div class="sub-table-wrapper">
           <table>
-            <thead><tr><th>Name</th><th>Steps (this challenge)</th><th>Joined</th></tr></thead>
+            <thead><tr><th>User ID</th><th>Steps (this challenge)</th><th>Joined</th></tr></thead>
             <tbody>
               ${members.map(m => `
                 <tr>
-                  <td>${escHtml(m.users?.name || 'Unknown')}</td>
+                  <td><code style="font-size:11px;">${escHtml(m.user_id)}</code></td>
                   <td>${fmtNum(stepMap[m.user_id]||0)}</td>
-                  <td class="text-muted">${formatDate(m.joined_at)}</td>
+                  <td class="text-muted">${formatDate(m.created_at)}</td>
                 </tr>
               `).join('')}
             </tbody>
