@@ -1,0 +1,26 @@
+[build]
+  # Publish both directories - we'll handle routing below
+  publish = "dist"
+  command = "mkdir -p dist && cp -r web/* dist/ && mkdir -p dist/admin && cp -r admin/* dist/admin/"
+
+[[redirects]]
+  from = "/"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin/*"
+  to = "/admin/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/admin"
+  to = "/admin/login.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
