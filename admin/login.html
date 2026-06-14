@@ -42,8 +42,13 @@
       window.location.href = '/dashboard.html'
     }
 
-    // Show unauthorized message if redirected back
-    if (new URLSearchParams(window.location.search).get('error') === 'unauthorized') {
+    // Show context message if redirected back
+    const reason = new URLSearchParams(window.location.search).get('reason')
+    const error  = new URLSearchParams(window.location.search).get('error')
+    if (reason === 'expired') {
+      document.getElementById('error-banner').textContent = 'Your session expired. Please sign in again.'
+      document.getElementById('error-banner').style.display = 'block'
+    } else if (error === 'unauthorized') {
       document.getElementById('error-banner').textContent = 'Access denied. This account does not have admin privileges.'
       document.getElementById('error-banner').style.display = 'block'
     }
