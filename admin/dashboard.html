@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Betfit Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/styles.css">
+</head>
+<body class="app-layout">
+
+<div id="nav-container"></div>
+
+<main class="page-content">
+  <div class="page-header">
+    <h1>Dashboard</h1>
+    <button class="btn-primary" onclick="window.location.href='/challenges.html'">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Create challenge
+    </button>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total companies</div>
+      <div class="stat-value" id="stat-companies"><span class="spinner"></span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Active challenges</div>
+      <div class="stat-value" id="stat-challenges"><span class="spinner"></span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total members</div>
+      <div class="stat-value" id="stat-members"><span class="spinner"></span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Steps logged today</div>
+      <div class="stat-value" id="stat-steps"><span class="spinner"></span></div>
+      <div class="stat-sub" id="stat-steps-sub"></div>
+    </div>
+  </div>
+
+  <!-- Recent challenges -->
+  <div class="table-wrapper">
+    <div class="table-toolbar">
+      <span class="table-title">Recent challenges</span>
+      <a href="/challenges.html" style="font-size:12px; color:var(--text-weak); text-decoration:none;">View all →</a>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Company</th>
+          <th>Type</th>
+          <th>Dates</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="recent-tbody">
+        <tr class="loading-row"><td colspan="5"><span class="spinner"></span> Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script src="/shared/config.js"></script>
+<script src="/shared/auth.js"></script>
+<script src="/shared/api.js"></script>
+<script src="/shared/toast.js"></script>
+<script src="/shared/nav.js"></script>
+<script>
+  checkAuth()
+  renderNav('dashboard')
+
+  function formatDate(d) {
+    if (!d) return '—'
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  }
+
+  function getStatus(start, end) {
+    const today = new Date().toISOString().split('T')[0]
+    if (start > today) return { label: 'Upcoming', cls: 'badge-upcoming' }
+    if (end < today)   return { label: 'Ended',    cls: 'badge-ended' }
+    return { label: 'Active', cls: 'badge-active' }
+  }
+
+  function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+  function formatNumber(n) {
+    if (n >= 1000000) return (n/1000000).toFixed(1) + 'M'
+    if (n >= 1000)    return (n/1000).toFixed(1) + 'k'
+    return String(n)
+  }
+
+  async function loadStats() {
+    const today = new Date().toISOString().split('T')[0]
+
+    try {
+      const [companies, challenges, members, stepLogs] = await Promise.all([
+        get('companies?select=id'),
+        get(`challenges?select=id&start_date=lte.${today}&end_date=gte.${today}`),
+        get('company_members?select=id'),
+        get(`step_logs?select=step_count&log_date=eq.${today}`)
+      ])
+
+      document.getElementById('stat-companies').textContent = formatNumber((companies||[]).length)
+      document.getElementById('stat-challenges').textContent = formatNumber((challenges||[]).length)
+      document.getElementById('stat-members').textContent = formatNumber((members||[]).length)
+
+      const totalSteps = (stepLogs||[]).reduce((s, r) => s + (r.step_count || 0), 0)
+      document.getElementById('stat-steps').textContent = formatNumber(totalSteps)
+      document.getElementById('stat-steps-sub').textContent = `from ${(stepLogs||[]).length} logs`
+    } catch (err) {
+      showToast('Failed to load stats: ' + err.message, 'error')
+    }
+  }
+
+  async function loadRecentChallenges() {
+    try {
+      const data = await get('challenges?select=*,companies(name)&order=created_at.desc&limit=5')
+      const tbody = document.getElementById('recent-tbody')
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><span class="empty-icon">🏆</span><p>No challenges yet</p></div></td></tr>`
+        return
+      }
+
+      tbody.innerHTML = data.map(c => {
+        const status = getStatus(c.start_date, c.end_date)
+        return `<tr>
+          <td><a href="/challenges.html" style="color:var(--text);font-weight:500;">${escHtml(c.name)}</a></td>
+          <td class="text-weak">${escHtml(c.companies?.name || '—')}</td>
+          <td class="text-weak">${c.type === 'steps' ? '👟 Steps' : '📍 Distance'}</td>
+          <td class="text-weak">${formatDate(c.start_date)} → ${formatDate(c.end_date)}</td>
+          <td><span class="badge ${status.cls}">${status.label}</span></td>
+        </tr>`
+      }).join('')
+    } catch (err) {
+      document.getElementById('recent-tbody').innerHTML =
+        `<tr class="loading-row"><td colspan="5" style="color:var(--error)">Failed to load</td></tr>`
+    }
+  }
+
+  loadStats()
+  loadRecentChallenges()
+</script>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teams — Betfit Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/styles.css">
+</head>
+<body class="app-layout">
+
+<div id="nav-container"></div>
+
+<main class="page-content">
+  <div class="page-header">
+    <h1>Teams</h1>
+    <span style="font-size:12px; color:var(--text-muted);">Read-only — teams are created by users in the app</span>
+  </div>
+
+  <div class="table-wrapper">
+    <div class="table-toolbar">
+      <span class="table-title">All teams <span class="table-count" id="count-label"></span></span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>Team Name</th>
+          <th>Challenge</th>
+          <th>Members</th>
+          <th>Total Steps</th>
+          <th>Invite Code</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody id="teams-tbody">
+        <tr class="loading-row"><td colspan="7"><span class="spinner"></span> Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script src="/shared/config.js"></script>
+<script src="/shared/auth.js"></script>
+<script src="/shared/api.js"></script>
+<script src="/shared/toast.js"></script>
+<script src="/shared/nav.js"></script>
+<script>
+  checkAuth()
+  renderNav('teams')
+
+  let teams = [], memberCounts = {}, stepTotals = {}
+
+  function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+  function formatDate(d) {
+    if (!d) return '—'
+    return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  }
+  function fmtNum(n) { return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n) }
+
+  async function loadTeams() {
+    try {
+      const [data, members, logs] = await Promise.all([
+        get('teams?select=*,challenges(name)&order=created_at.desc'),
+        get('team_members?select=id,team_id,user_id'),
+        get('step_logs?select=user_id,challenge_id,step_count')
+      ])
+
+      teams = data || []
+
+      // Member counts per team
+      memberCounts = {}
+      const teamUserMap = {} // team_id → [user_ids]
+      ;(members||[]).forEach(m => {
+        memberCounts[m.team_id] = (memberCounts[m.team_id]||0)+1
+        if (!teamUserMap[m.team_id]) teamUserMap[m.team_id] = []
+        teamUserMap[m.team_id].push(m.user_id)
+      })
+
+      // Step totals: for each team, sum steps of its members in the team's challenge
+      stepTotals = {}
+      const logMap = {} // "userId_challengeId" → steps
+      ;(logs||[]).forEach(l => { logMap[`${l.user_id}_${l.challenge_id}`] = (logMap[`${l.user_id}_${l.challenge_id}`]||0) + (l.step_count||0) })
+
+      teams.forEach(t => {
+        const users = teamUserMap[t.id] || []
+        stepTotals[t.id] = users.reduce((sum, uid) => sum + (logMap[`${uid}_${t.challenge_id}`]||0), 0)
+      })
+
+      renderTable()
+    } catch (err) {
+      showToast('Failed to load teams: ' + err.message, 'error')
+    }
+  }
+
+  function renderTable() {
+    document.getElementById('count-label').textContent = `(${teams.length})`
+    const tbody = document.getElementById('teams-tbody')
+
+    if (teams.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><span class="empty-icon">👥</span><p>No teams yet — they're created when users enroll in challenges</p></div></td></tr>`
+      return
+    }
+
+    tbody.innerHTML = teams.map(t => `
+      <tr class="expand-row" onclick="toggleExpand('${t.id}')">
+        <td style="width:24px; color:var(--text-muted); font-size:10px;" id="chevron-${t.id}">▶</td>
+        <td><strong>${escHtml(t.name)}</strong></td>
+        <td class="text-weak">${escHtml(t.challenges?.name || '—')}</td>
+        <td class="text-weak">${memberCounts[t.id]||0}</td>
+        <td class="text-weak">${fmtNum(stepTotals[t.id]||0)}</td>
+        <td><span class="invite-code">${escHtml(t.invite_code||'—')}</span></td>
+        <td class="text-weak">${formatDate(t.created_at)}</td>
+      </tr>
+      <tr class="expanded-content hidden" id="expanded-${t.id}">
+        <td colspan="7">
+          <div id="team-members-${t.id}" style="color:var(--text-muted); font-size:13px;">Loading members…</div>
+        </td>
+      </tr>
+    `).join('')
+  }
+
+  async function toggleExpand(id) {
+    const row = document.getElementById(`expanded-${id}`)
+    const isOpen = !row.classList.contains('hidden')
+    document.querySelectorAll('.expanded-content').forEach(r => r.classList.add('hidden'))
+    document.querySelectorAll('[id^="chevron-"]').forEach(c => c.textContent = '▶')
+    if (!isOpen) {
+      row.classList.remove('hidden')
+      document.getElementById(`chevron-${id}`).textContent = '▼'
+      loadTeamMembers(id)
+    }
+  }
+
+  async function loadTeamMembers(teamId) {
+    const container = document.getElementById(`team-members-${teamId}`)
+    const team = teams.find(t => t.id === teamId)
+    try {
+      const members = await get(`team_members?team_id=eq.${teamId}&select=*,users(name)&order=joined_at.asc`)
+      if (!members || members.length === 0) {
+        container.innerHTML = '<em>No members</em>'; return
+      }
+
+      // Get step totals for these members
+      const userIds = members.map(m => m.user_id).join(',')
+      const logs = team?.challenge_id
+        ? await get(`step_logs?user_id=in.(${userIds})&challenge_id=eq.${team.challenge_id}&select=user_id,step_count`)
+        : []
+
+      const stepMap = {}
+      ;(logs||[]).forEach(l => { stepMap[l.user_id] = (stepMap[l.user_id]||0) + (l.step_count||0) })
+
+      container.innerHTML = `
+        <div class="sub-table-wrapper">
+          <table>
+            <thead><tr><th>Name</th><th>Steps (this challenge)</th><th>Joined</th></tr></thead>
+            <tbody>
+              ${members.map(m => `
+                <tr>
+                  <td>${escHtml(m.users?.name || 'Unknown')}</td>
+                  <td>${fmtNum(stepMap[m.user_id]||0)}</td>
+                  <td class="text-muted">${formatDate(m.joined_at)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>`
+    } catch {
+      container.innerHTML = '<em style="color:var(--error)">Failed to load members</em>'
+    }
+  }
+
+  loadTeams()
+</script>
+</body>
+</html>

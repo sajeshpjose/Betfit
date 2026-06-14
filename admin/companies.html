@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Companies — Betfit Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/styles.css">
+</head>
+<body class="app-layout">
+
+<div id="nav-container"></div>
+
+<main class="page-content">
+  <div class="page-header">
+    <h1>Companies</h1>
+    <button class="btn-primary" onclick="openCreateCompanyModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add company
+    </button>
+  </div>
+
+  <div class="table-wrapper">
+    <div class="table-toolbar">
+      <span class="table-title">All companies <span class="table-count" id="count-label"></span></span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>Name</th>
+          <th>Invite Code</th>
+          <th>Members</th>
+          <th>Challenges</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody id="companies-tbody">
+        <tr class="loading-row"><td colspan="6"><span class="spinner"></span> Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<!-- Create Company Modal -->
+<div id="company-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Add company</h2>
+      <button class="modal-close" onclick="closeModal('company-modal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <form id="company-form" onsubmit="submitCompany(event)">
+      <div class="form-group">
+        <label for="c-name">Company name</label>
+        <input type="text" id="c-name" placeholder="Acme Corp" required>
+      </div>
+      <div class="form-group">
+        <label for="c-code">Invite code</label>
+        <div style="display:flex; gap:8px;">
+          <input type="text" id="c-code" placeholder="ACME2024" required style="text-transform:uppercase; letter-spacing:2px;">
+          <button type="button" class="btn-secondary" onclick="refreshCode()" style="white-space:nowrap; flex-shrink:0;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Refresh
+          </button>
+        </div>
+        <p style="font-size:11px; color:var(--text-muted); margin-top:4px;">Employees use this code to join the company in the app.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('company-modal')">Cancel</button>
+        <button type="submit" class="btn-primary" id="company-submit-btn">Add company</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/shared/config.js"></script>
+<script src="/shared/auth.js"></script>
+<script src="/shared/api.js"></script>
+<script src="/shared/toast.js"></script>
+<script src="/shared/modal.js"></script>
+<script src="/shared/nav.js"></script>
+<script>
+  checkAuth()
+  renderNav('companies')
+
+  let companies = [], memberCounts = {}, challengeCounts = {}
+  let expandedId = null
+
+  function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+  function formatDate(d) {
+    if (!d) return '—'
+    return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  }
+
+  async function loadCompanies() {
+    try {
+      const [data, members, challenges] = await Promise.all([
+        get('companies?select=*&order=created_at.desc'),
+        get('company_members?select=id,company_id'),
+        get('challenges?select=id,company_id')
+      ])
+
+      companies = data || []
+      memberCounts = {}; challengeCounts = {}
+      ;(members||[]).forEach(m => { memberCounts[m.company_id] = (memberCounts[m.company_id]||0)+1 })
+      ;(challenges||[]).forEach(c => { challengeCounts[c.company_id] = (challengeCounts[c.company_id]||0)+1 })
+
+      renderTable()
+    } catch (err) {
+      showToast('Failed to load companies: ' + err.message, 'error')
+    }
+  }
+
+  function renderTable() {
+    document.getElementById('count-label').textContent = `(${companies.length})`
+    const tbody = document.getElementById('companies-tbody')
+
+    if (companies.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><span class="empty-icon">🏢</span><p>No companies yet</p></div></td></tr>`
+      return
+    }
+
+    tbody.innerHTML = companies.map(c => `
+      <tr class="expand-row" onclick="toggleExpand('${c.id}')" id="row-${c.id}">
+        <td style="width:24px; color:var(--text-muted); font-size:10px;" id="chevron-${c.id}">▶</td>
+        <td><strong>${escHtml(c.name)}</strong></td>
+        <td><span class="invite-code">${escHtml(c.invite_code||'—')}</span></td>
+        <td class="text-weak">${memberCounts[c.id]||0}</td>
+        <td class="text-weak">${challengeCounts[c.id]||0}</td>
+        <td class="text-weak">${formatDate(c.created_at)}</td>
+      </tr>
+      <tr class="expanded-content hidden" id="expanded-${c.id}">
+        <td colspan="6">
+          <div id="members-${c.id}" style="color:var(--text-muted); font-size:13px;">Loading members…</div>
+        </td>
+      </tr>
+    `).join('')
+  }
+
+  async function toggleExpand(id) {
+    const row = document.getElementById(`expanded-${id}`)
+    const chevron = document.getElementById(`chevron-${id}`)
+    const isOpen = !row.classList.contains('hidden')
+
+    // Close any open
+    document.querySelectorAll('.expanded-content').forEach(r => r.classList.add('hidden'))
+    document.querySelectorAll('[id^="chevron-"]').forEach(c => c.textContent = '▶')
+
+    if (!isOpen) {
+      row.classList.remove('hidden')
+      chevron.textContent = '▼'
+      loadMembers(id)
+    }
+  }
+
+  async function loadMembers(companyId) {
+    const container = document.getElementById(`members-${companyId}`)
+    try {
+      const members = await get(`company_members?company_id=eq.${companyId}&select=*,users(name)&order=joined_at.asc`)
+      if (!members || members.length === 0) {
+        container.innerHTML = '<em>No members yet</em>'; return
+      }
+      container.innerHTML = `
+        <div class="sub-table-wrapper">
+          <table>
+            <thead><tr><th>Name</th><th>Role</th><th>Joined</th></tr></thead>
+            <tbody>
+              ${members.map(m => `
+                <tr>
+                  <td>${escHtml(m.users?.name || 'Unknown')}</td>
+                  <td><span class="badge ${m.role==='admin'?'badge-active':'badge-upcoming'}">${m.role||'member'}</span></td>
+                  <td class="text-muted">${formatDate(m.joined_at)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>`
+    } catch {
+      container.innerHTML = '<em style="color:var(--error)">Failed to load members</em>'
+    }
+  }
+
+  function generateCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    return Array.from({length: 8}, () => chars[Math.floor(Math.random()*chars.length)]).join('')
+  }
+
+  function refreshCode() {
+    document.getElementById('c-code').value = generateCode()
+  }
+
+  function openCreateCompanyModal() {
+    document.getElementById('company-form').reset()
+    document.getElementById('c-code').value = generateCode()
+    openModal('company-modal')
+  }
+
+  async function submitCompany(e) {
+    e.preventDefault()
+    const btn = document.getElementById('company-submit-btn')
+    btn.disabled = true
+    btn.innerHTML = '<span class="spinner"></span> Creating…'
+
+    try {
+      await post('companies', {
+        name: document.getElementById('c-name').value.trim(),
+        invite_code: document.getElementById('c-code').value.trim().toUpperCase()
+      })
+      showToast('Company created ✓')
+      closeModal('company-modal')
+      loadCompanies()
+    } catch (err) {
+      showToast('Error: ' + err.message, 'error')
+    } finally {
+      btn.disabled = false
+      btn.textContent = 'Add company'
+    }
+  }
+
+  loadCompanies()
+</script>
+</body>
+</html>

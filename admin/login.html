@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — Betfit Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/styles.css">
+</head>
+<body class="login-page">
+
+  <div class="login-card">
+    <span class="login-logo">betfit.</span>
+    <p class="login-tagline">Admin Dashboard</p>
+
+    <div id="error-banner" style="display:none; background:rgba(255,67,58,0.12); border:1px solid rgba(255,67,58,0.3); border-radius:8px; padding:10px 14px; margin-bottom:16px; font-size:13px; color:#FF453A;" id="error-msg"></div>
+
+    <div class="form-group">
+      <label for="email">Email address</label>
+      <input type="email" id="email" placeholder="admin@company.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <button class="btn-primary" id="login-btn" onclick="signIn()" style="width:100%; justify-content:center; height:44px; font-size:14px; margin-top:4px;">
+      Sign in
+    </button>
+    <p style="text-align:center; margin-top:16px; font-size:12px; color:var(--text-muted);">
+      Set your password via Supabase → Authentication → Users → Edit user.
+    </p>
+  </div>
+
+  <script src="/shared/config.js"></script>
+  <script src="/shared/auth.js"></script>
+  <script src="/shared/toast.js"></script>
+  <script>
+    // Already logged in → go straight to dashboard
+    if (localStorage.getItem('bf_access_token')) {
+      window.location.href = '/dashboard.html'
+    }
+
+    // Show unauthorized message if redirected back
+    if (new URLSearchParams(window.location.search).get('error') === 'unauthorized') {
+      document.getElementById('error-banner').textContent = 'Access denied. This account does not have admin privileges.'
+      document.getElementById('error-banner').style.display = 'block'
+    }
+
+    function showError(msg) {
+      const banner = document.getElementById('error-banner')
+      banner.textContent = msg
+      banner.style.display = 'block'
+    }
+
+    async function signIn() {
+      const email    = document.getElementById('email').value.trim()
+      const password = document.getElementById('password').value
+
+      document.getElementById('error-banner').style.display = 'none'
+
+      if (!email || !password) {
+        showError('Please enter your email and password.'); return
+      }
+
+      const btn = document.getElementById('login-btn')
+      btn.disabled = true
+      btn.textContent = 'Signing in…'
+
+      try {
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+          method: 'POST',
+          headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        })
+
+        const data = await res.json()
+
+        if (!res.ok) {
+          throw new Error(data.error_description || data.message || data.error || 'Invalid email or password')
+        }
+
+        localStorage.setItem('bf_access_token', data.access_token)
+        if (data.user?.email) localStorage.setItem('bf_user_email', data.user.email)
+        window.location.href = '/dashboard.html'
+
+      } catch (err) {
+        showError(err.message)
+        btn.disabled = false
+        btn.textContent = 'Sign in'
+      }
+    }
+
+    // Submit on Enter
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') signIn()
+    })
+  </script>
+</body>
+</html>

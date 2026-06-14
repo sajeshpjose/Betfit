@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Challenges — Betfit Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/styles.css">
+</head>
+<body class="app-layout">
+
+<div id="nav-container"></div>
+
+<main class="page-content">
+  <div class="page-header">
+    <h1>Challenges</h1>
+    <button class="btn-primary" onclick="openCreateModal()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Create challenge
+    </button>
+  </div>
+
+  <div class="table-wrapper">
+    <div class="table-toolbar">
+      <span class="table-title">All challenges <span class="table-count" id="count-label"></span></span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Company</th>
+          <th>Type</th>
+          <th>Start</th>
+          <th>End</th>
+          <th>Teams</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="challenges-tbody">
+        <tr class="loading-row"><td colspan="8"><span class="spinner"></span> Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<!-- ── Create / Edit Modal ──────────────────────────────── -->
+<div id="challenge-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="modal-title">Create challenge</h2>
+      <button class="modal-close" onclick="closeModal('challenge-modal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <form id="challenge-form" onsubmit="submitChallenge(event)">
+      <input type="hidden" id="challenge-id">
+
+      <div class="form-group">
+        <label for="f-company">Company</label>
+        <input type="text" id="f-company" placeholder="Acme Corp">
+      </div>
+
+      <div class="form-group">
+        <label for="f-name">Challenge name</label>
+        <input type="text" id="f-name" placeholder="June Wellness Sprint" required>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="f-type">Type</label>
+          <select id="f-type" required>
+            <option value="steps">Steps</option>
+            <option value="distance">Distance</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="f-team-size">Team size</label>
+          <input type="number" id="f-team-size" value="2" min="1" max="10" required>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="f-start">Start date</label>
+          <input type="date" id="f-start" required>
+        </div>
+        <div class="form-group">
+          <label for="f-end">End date</label>
+          <input type="date" id="f-end" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="f-goal">Daily step goal</label>
+        <input type="number" id="f-goal" value="10000" min="100" step="500" required>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeModal('challenge-modal')">Cancel</button>
+        <button type="submit" class="btn-primary" id="submit-btn">Create challenge</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── Delete Confirm Modal ─────────────────────────────── -->
+<div id="delete-modal" class="modal-overlay">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <h2 class="modal-title">Delete challenge?</h2>
+      <button class="modal-close" onclick="closeModal('delete-modal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <p style="color:var(--text-weak); font-size:14px; line-height:1.6;">
+      "<strong id="delete-name"></strong>" will be permanently deleted. This cannot be undone and will remove all associated teams and step logs.
+    </p>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('delete-modal')">Cancel</button>
+      <button class="btn-danger" id="confirm-delete-btn" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="/shared/config.js"></script>
+<script src="/shared/auth.js"></script>
+<script src="/shared/api.js"></script>
+<script src="/shared/toast.js"></script>
+<script src="/shared/modal.js"></script>
+<script src="/shared/nav.js"></script>
+<script>
+  checkAuth()
+  renderNav('challenges')
+
+  let challenges = []
+  let teamCounts = {}
+  let pendingDeleteId = null
+
+  // ── Helpers ─────────────────────────────────────────────
+  function formatDate(d) {
+    if (!d) return '—'
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  }
+
+  function getStatus(start, end) {
+    const today = new Date().toISOString().split('T')[0]
+    if (start > today) return { label: 'Upcoming', cls: 'badge-upcoming' }
+    if (end < today)   return { label: 'Ended',    cls: 'badge-ended' }
+    return { label: 'Active', cls: 'badge-active' }
+  }
+
+  // ── Load data ────────────────────────────────────────────
+  async function loadChallenges() {
+    try {
+      const [data, teams] = await Promise.all([
+        get('challenges?select=*,companies(name)&order=created_at.desc'),
+        get('teams?select=id,challenge_id')
+      ])
+
+      challenges = data || []
+      teamCounts = {}
+      ;(teams || []).forEach(t => {
+        teamCounts[t.challenge_id] = (teamCounts[t.challenge_id] || 0) + 1
+      })
+
+      renderTable()
+    } catch (err) {
+      showToast('Failed to load challenges: ' + err.message, 'error')
+      document.getElementById('challenges-tbody').innerHTML =
+        `<tr class="loading-row"><td colspan="8" style="color:var(--error)">Failed to load</td></tr>`
+    }
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('challenges-tbody')
+    document.getElementById('count-label').textContent = `(${challenges.length})`
+
+    if (challenges.length === 0) {
+      tbody.innerHTML = `
+        <tr><td colspan="8">
+          <div class="empty-state">
+            <span class="empty-icon">🏆</span>
+            <p>No challenges yet. Create the first one!</p>
+          </div>
+        </td></tr>`
+      return
+    }
+
+    tbody.innerHTML = challenges.map(c => {
+      const status = getStatus(c.start_date, c.end_date)
+      const companyName = c.companies?.name || '—'
+      const count = teamCounts[c.id] || 0
+      const typeLabel = c.type === 'steps' ? '👟 Steps' : '📍 Distance'
+
+      return `<tr>
+        <td><strong>${escHtml(c.name)}</strong></td>
+        <td class="text-weak">${escHtml(companyName)}</td>
+        <td class="text-weak">${typeLabel}</td>
+        <td class="text-weak">${formatDate(c.start_date)}</td>
+        <td class="text-weak">${formatDate(c.end_date)}</td>
+        <td class="text-weak">${count}</td>
+        <td><span class="badge ${status.cls}">${status.label}</span></td>
+        <td>
+          <div class="actions-cell">
+            <button class="btn-ghost" onclick="openEditModal('${c.id}')" title="Edit">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Edit
+            </button>
+            <button class="btn-ghost" onclick="openDeleteModal('${c.id}', '${escAttr(c.name)}')" title="Delete" style="color:var(--error)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              Delete
+            </button>
+          </div>
+        </td>
+      </tr>`
+    }).join('')
+  }
+
+  // ── Create modal ─────────────────────────────────────────
+  function openCreateModal() {
+    document.getElementById('modal-title').textContent = 'Create challenge'
+    document.getElementById('submit-btn').textContent = 'Create challenge'
+    document.getElementById('challenge-id').value = ''
+    document.getElementById('challenge-form').reset()
+    // Set default dates (today + 30 days)
+    const today = new Date().toISOString().split('T')[0]
+    const end   = new Date(Date.now() + 30*86400000).toISOString().split('T')[0]
+    document.getElementById('f-start').value = today
+    document.getElementById('f-end').value   = end
+    document.getElementById('f-goal').value  = '10000'
+    document.getElementById('f-team-size').value = '2'
+    openModal('challenge-modal')
+  }
+
+  // ── Edit modal ───────────────────────────────────────────
+  function openEditModal(id) {
+    const c = challenges.find(x => x.id === id)
+    if (!c) return
+    document.getElementById('modal-title').textContent  = 'Edit challenge'
+    document.getElementById('submit-btn').textContent   = 'Save changes'
+    document.getElementById('challenge-id').value       = c.id
+    document.getElementById('f-name').value             = c.name || ''
+    document.getElementById('f-type').value             = c.type || 'steps'
+    document.getElementById('f-start').value            = c.start_date || ''
+    document.getElementById('f-end').value              = c.end_date || ''
+    document.getElementById('f-team-size').value        = c.team_size || 2
+    document.getElementById('f-goal').value             = c.daily_goal || 10000
+    document.getElementById('f-company').value          = c.company || ''
+    openModal('challenge-modal')
+  }
+
+  // ── Submit (create or update) ────────────────────────────
+  async function submitChallenge(e) {
+    e.preventDefault()
+    const btn = document.getElementById('submit-btn')
+    const id  = document.getElementById('challenge-id').value
+
+    const start = document.getElementById('f-start').value
+    const end   = document.getElementById('f-end').value
+    if (end < start) { showToast('End date must be after start date', 'error'); return }
+
+    const payload = {
+      company:     document.getElementById('f-company').value.trim() || null,
+      name:        document.getElementById('f-name').value.trim(),
+      type:        document.getElementById('f-type').value,
+      start_date:  start,
+      end_date:    end,
+      team_size_min: parseInt(document.getElementById('f-team-size').value),
+      team_size_max: parseInt(document.getElementById('f-team-size').value),
+      daily_goal:  parseInt(document.getElementById('f-goal').value),
+      is_public:   true,
+    }
+
+    btn.disabled = true
+    btn.innerHTML = '<span class="spinner"></span> Saving…'
+
+    try {
+      if (id) {
+        await patch(`challenges?id=eq.${id}`, payload)
+        showToast('Challenge updated ✓')
+      } else {
+        await post('challenges', payload)
+        showToast('Challenge created ✓')
+      }
+      closeModal('challenge-modal')
+      loadChallenges()
+    } catch (err) {
+      showToast('Error: ' + err.message, 'error')
+    } finally {
+      btn.disabled = false
+      btn.textContent = id ? 'Save changes' : 'Create challenge'
+    }
+  }
+
+  // ── Delete ───────────────────────────────────────────────
+  function openDeleteModal(id, name) {
+    pendingDeleteId = id
+    document.getElementById('delete-name').textContent = name
+    openModal('delete-modal')
+  }
+
+  async function confirmDelete() {
+    if (!pendingDeleteId) return
+    const btn = document.getElementById('confirm-delete-btn')
+    btn.disabled = true
+    btn.textContent = 'Deleting…'
+    try {
+      await del(`challenges?id=eq.${pendingDeleteId}`)
+      showToast('Challenge deleted')
+      closeModal('delete-modal')
+      loadChallenges()
+    } catch (err) {
+      showToast('Error: ' + err.message, 'error')
+    } finally {
+      btn.disabled = false
+      btn.textContent = 'Delete'
+      pendingDeleteId = null
+    }
+  }
+
+  // ── Utils ────────────────────────────────────────────────
+  function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+  function escAttr(s) { return String(s||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;') }
+
+  loadChallenges()
+</script>
+</body>
+</html>

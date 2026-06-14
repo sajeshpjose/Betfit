@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Step Logs — Betfit Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/shared/styles.css">
+</head>
+<body class="app-layout">
+
+<div id="nav-container"></div>
+
+<main class="page-content">
+  <div class="page-header">
+    <h1>Step Logs</h1>
+    <span style="font-size:12px; color:var(--text-muted);">Showing last 100 entries</span>
+  </div>
+
+  <div class="filter-bar">
+    <select id="filter-challenge" onchange="loadLogs()">
+      <option value="">All challenges</option>
+    </select>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <label style="text-transform:none; font-size:13px; color:var(--text-weak); white-space:nowrap; margin:0;">From</label>
+      <input type="date" id="filter-from" onchange="loadLogs()" style="width:160px;">
+    </div>
+    <div style="display:flex; align-items:center; gap:6px;">
+      <label style="text-transform:none; font-size:13px; color:var(--text-weak); white-space:nowrap; margin:0;">To</label>
+      <input type="date" id="filter-to" onchange="loadLogs()" style="width:160px;">
+    </div>
+    <button class="btn-secondary" onclick="clearFilters()">Clear</button>
+  </div>
+
+  <div class="table-wrapper">
+    <div class="table-toolbar">
+      <span class="table-title">Step logs <span class="table-count" id="count-label"></span></span>
+      <span id="total-steps-label" style="font-size:12px; color:var(--text-weak);"></span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Challenge</th>
+          <th>Date</th>
+          <th>Steps</th>
+          <th>Distance</th>
+          <th>Synced at</th>
+        </tr>
+      </thead>
+      <tbody id="logs-tbody">
+        <tr class="loading-row"><td colspan="6"><span class="spinner"></span> Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script src="/shared/config.js"></script>
+<script src="/shared/auth.js"></script>
+<script src="/shared/api.js"></script>
+<script src="/shared/toast.js"></script>
+<script src="/shared/nav.js"></script>
+<script>
+  checkAuth()
+  renderNav('step_logs')
+
+  function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+  function formatDate(d) {
+    if (!d) return '—'
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+  }
+  function formatDateTime(d) {
+    if (!d) return '—'
+    return new Date(d).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+  }
+  function fmtNum(n) { return n >= 1000 ? (n/1000).toFixed(1)+'k' : String(n) }
+
+  async function loadChallengeOptions() {
+    try {
+      const challenges = await get('challenges?select=id,name&order=name.asc')
+      const sel = document.getElementById('filter-challenge')
+      ;(challenges||[]).forEach(c => {
+        const opt = document.createElement('option')
+        opt.value = c.id
+        opt.textContent = c.name
+        sel.appendChild(opt)
+      })
+    } catch {}
+  }
+
+  async function loadLogs() {
+    const tbody = document.getElementById('logs-tbody')
+    tbody.innerHTML = `<tr class="loading-row"><td colspan="6"><span class="spinner"></span> Loading…</td></tr>`
+
+    const challengeId = document.getElementById('filter-challenge').value
+    const from        = document.getElementById('filter-from').value
+    const to          = document.getElementById('filter-to').value
+
+    let path = 'step_logs?select=*,users(name),challenges(name)&order=synced_at.desc&limit=100'
+    if (challengeId) path += `&challenge_id=eq.${challengeId}`
+    if (from)        path += `&log_date=gte.${from}`
+    if (to)          path += `&log_date=lte.${to}`
+
+    try {
+      const logs = await get(path)
+      const data = logs || []
+
+      document.getElementById('count-label').textContent = `(${data.length})`
+      const totalSteps = data.reduce((s, l) => s + (l.step_count||0), 0)
+      document.getElementById('total-steps-label').textContent =
+        data.length > 0 ? `Total: ${totalSteps.toLocaleString()} steps` : ''
+
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><span class="empty-icon">👟</span><p>No logs found for these filters</p></div></td></tr>`
+        return
+      }
+
+      tbody.innerHTML = data.map(l => `
+        <tr>
+          <td>${escHtml(l.users?.name || 'Unknown')}</td>
+          <td class="text-weak">${escHtml(l.challenges?.name || '—')}</td>
+          <td class="text-weak">${formatDate(l.log_date)}</td>
+          <td><strong>${(l.step_count||0).toLocaleString()}</strong></td>
+          <td class="text-weak">${l.distance_km ? Number(l.distance_km).toFixed(2)+' km' : '—'}</td>
+          <td class="text-muted">${formatDateTime(l.synced_at)}</td>
+        </tr>
+      `).join('')
+    } catch (err) {
+      showToast('Failed to load logs: ' + err.message, 'error')
+      tbody.innerHTML = `<tr class="loading-row"><td colspan="6" style="color:var(--error)">Failed to load</td></tr>`
+    }
+  }
+
+  function clearFilters() {
+    document.getElementById('filter-challenge').value = ''
+    document.getElementById('filter-from').value = ''
+    document.getElementById('filter-to').value = ''
+    loadLogs()
+  }
+
+  loadChallengeOptions()
+  loadLogs()
+</script>
+</body>
+</html>
