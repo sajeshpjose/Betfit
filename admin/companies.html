@@ -75,6 +75,25 @@
   </div>
 </div>
 
+<!-- Delete Company Modal -->
+<div id="delete-modal" class="modal-overlay">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <h2 class="modal-title">Delete company?</h2>
+      <button class="modal-close" onclick="closeModal('delete-modal')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <p style="color:var(--text-weak); font-size:14px; line-height:1.6;">
+      "<strong id="delete-name"></strong>" will be permanently deleted.
+    </p>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('delete-modal')">Cancel</button>
+      <button class="btn-danger" id="delete-btn" onclick="deleteCompany()">Delete</button>
+    </div>
+  </div>
+</div>
+
 <script src="/shared/config.js"></script>
 <script src="/shared/auth.js"></script>
 <script src="/shared/api.js"></script>
@@ -145,7 +164,11 @@
         <td><strong>${escHtml(c.name)}</strong></td>
         <td class="text-weak">${c.challenges}</td>
         <td class="text-weak">${c.teams}</td>
-        <td class="text-weak">—</td>
+        <td style="text-align:right;">
+          <button class="btn-icon-small" onclick="confirmDelete('${escHtml(c.name)}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          </button>
+        </td>
       </tr>
     `).join('')
   }
@@ -185,6 +208,34 @@
     } finally {
       btn.disabled = false
       btn.textContent = 'Add company'
+    }
+  }
+
+  let pendingDeleteName = null
+
+  function confirmDelete(name) {
+    pendingDeleteName = name
+    document.getElementById('delete-name').textContent = name
+    openModal('delete-modal')
+  }
+
+  async function deleteCompany() {
+    if (!pendingDeleteName) return
+    const btn = document.getElementById('delete-btn')
+    btn.disabled = true
+    btn.innerHTML = '<span class="spinner"></span> Deleting…'
+
+    try {
+      await del(`companies?name=eq.${encodeURIComponent(pendingDeleteName)}`)
+      showToast('Company deleted ✓')
+      closeModal('delete-modal')
+      loadCompanies()
+    } catch (err) {
+      showToast('Error: ' + err.message, 'error')
+    } finally {
+      btn.disabled = false
+      btn.textContent = 'Delete'
+      pendingDeleteName = null
     }
   }
 
