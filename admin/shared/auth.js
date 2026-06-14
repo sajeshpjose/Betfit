@@ -39,8 +39,32 @@ async function checkAdminAccess() {
 
 function signOut() {
   localStorage.removeItem('bf_access_token')
+  localStorage.removeItem('bf_refresh_token')
   localStorage.removeItem('bf_user_email')
   window.location.href = '/login.html'
+}
+
+async function refreshSession() {
+  const refreshToken = localStorage.getItem('bf_refresh_token')
+  if (!refreshToken) { signOut(); return false }
+
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken })
+    })
+
+    if (!res.ok) { signOut(); return false }
+
+    const data = await res.json()
+    localStorage.setItem('bf_access_token', data.access_token)
+    if (data.refresh_token) localStorage.setItem('bf_refresh_token', data.refresh_token)
+    return true
+  } catch {
+    signOut()
+    return false
+  }
 }
 
 async function getCurrentUser() {

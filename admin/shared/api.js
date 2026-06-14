@@ -7,8 +7,17 @@ function getHeaders(extra = {}) {
   }
 }
 
-async function handleResponse(res) {
+async function handleResponse(res, retryFn) {
   if (res.status === 204) return null
+
+  // Auto-refresh on JWT expired then retry once
+  if (res.status === 401) {
+    const refreshed = await refreshSession()
+    if (refreshed && retryFn) return retryFn()
+    signOut()
+    return null
+  }
+
   const text = await res.text()
   let data
   try { data = JSON.parse(text) } catch { data = text }
@@ -20,10 +29,8 @@ async function handleResponse(res) {
 }
 
 async function get(path) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    headers: getHeaders()
-  })
-  return handleResponse(res)
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { headers: getHeaders() })
+  return handleResponse(res, () => get(path))
 }
 
 async function post(path, body, prefer = 'return=representation') {
@@ -32,7 +39,7 @@ async function post(path, body, prefer = 'return=representation') {
     headers: getHeaders({ 'Prefer': prefer }),
     body: JSON.stringify(body)
   })
-  return handleResponse(res)
+  return handleResponse(res, () => post(path, body, prefer))
 }
 
 async function patch(path, body) {
@@ -41,15 +48,12 @@ async function patch(path, body) {
     headers: getHeaders({ 'Prefer': 'return=representation' }),
     body: JSON.stringify(body)
   })
-  return handleResponse(res)
+  return handleResponse(res, () => patch(path, body))
 }
 
 async function del(path) {
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
-    method: 'DELETE',
-    headers: getHeaders()
-  })
-  return handleResponse(res)
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, { method: 'DELETE', headers: getHeaders() })
+  return handleResponse(res, () => del(path))
 }
 
 async function getCount(path) {

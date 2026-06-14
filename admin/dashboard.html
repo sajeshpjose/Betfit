@@ -25,7 +25,7 @@
   <!-- Stat cards -->
   <div class="stat-grid">
     <div class="stat-card">
-      <div class="stat-label">Total companies</div>
+      <div class="stat-label">Total challenges</div>
       <div class="stat-value" id="stat-companies"><span class="spinner"></span></div>
     </div>
     <div class="stat-card">
@@ -33,7 +33,7 @@
       <div class="stat-value" id="stat-challenges"><span class="spinner"></span></div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Total members</div>
+      <div class="stat-label">Total teams</div>
       <div class="stat-value" id="stat-members"><span class="spinner"></span></div>
     </div>
     <div class="stat-card">
@@ -99,16 +99,16 @@
     const today = new Date().toISOString().split('T')[0]
 
     try {
-      const [companies, challenges, members, stepLogs] = await Promise.all([
-        get('companies?select=id'),
+      const [challenges, activeChallenges, teams, stepLogs] = await Promise.all([
+        get('challenges?select=id'),
         get(`challenges?select=id&start_date=lte.${today}&end_date=gte.${today}`),
-        get('company_members?select=id'),
+        get('challenge_teams?select=id'),
         get(`step_logs?select=step_count&log_date=eq.${today}`)
       ])
 
-      document.getElementById('stat-companies').textContent = formatNumber((companies||[]).length)
-      document.getElementById('stat-challenges').textContent = formatNumber((challenges||[]).length)
-      document.getElementById('stat-members').textContent = formatNumber((members||[]).length)
+      document.getElementById('stat-companies').textContent = formatNumber((challenges||[]).length)
+      document.getElementById('stat-challenges').textContent = formatNumber((activeChallenges||[]).length)
+      document.getElementById('stat-members').textContent = formatNumber((teams||[]).length)
 
       const totalSteps = (stepLogs||[]).reduce((s, r) => s + (r.step_count || 0), 0)
       document.getElementById('stat-steps').textContent = formatNumber(totalSteps)

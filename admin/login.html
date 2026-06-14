@@ -82,6 +82,7 @@
         }
 
         localStorage.setItem('bf_access_token', data.access_token)
+        localStorage.setItem('bf_refresh_token', data.refresh_token)
         if (data.user?.email) localStorage.setItem('bf_user_email', data.user.email)
         window.location.href = '/dashboard.html'
 
