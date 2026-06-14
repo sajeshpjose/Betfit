@@ -221,7 +221,6 @@ struct FeaturesStep: View {
     private let features: [(icon: String, title: String, desc: String)] = [
         ("person.2.fill",        "Pair up",              "Team up with a friend or colleague. Your steps add up together."),
         ("trophy.fill",          "Compete in challenges","Join company-wide competitions and watch your team rise the leaderboard."),
-        ("figure.run",           "Couch to 5K",          "Structured 30-day program taking you from 0 to a full 5K run."),
         ("heart.text.square.fill","Auto step sync",       "Pulls steps from Apple Health automatically, even in the background."),
     ]
 
@@ -503,7 +502,7 @@ struct ProfileSetupStep: View {
 
                     // ── Form fields
                     VStack(spacing: 14) {
-                        BFTextField(label: "Full name", placeholder: "e.g. Sajesh Kumar", text: $name, focused: $focusedField, field: .name)
+                        BFTextField(label: "Full name", placeholder: "e.g. Usain Bolt", text: $name, focused: $focusedField, field: .name)
 
                         BFTextField(label: "Username", placeholder: "@yourhandle", text: $username, focused: $focusedField, field: .username)
 
