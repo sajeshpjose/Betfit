@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BetFit — Compete. Move. Win.</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent:    #D5FF45;
+      --black:     #0A0A0A;
+      --white:     #FFFFFF;
+      --bg:        #F7F7F5;
+      --text:      #111111;
+      --text-mid:  #555555;
+      --text-soft: #999999;
+      --border:    rgba(0,0,0,0.10);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--white);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 40px;
+      height: 64px;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .nav-logo {
+      display: flex; align-items: center; gap: 8px;
+      text-decoration: none;
+      font-size: 17px; font-weight: 800;
+      color: var(--text); letter-spacing: -0.3px;
+    }
+
+    .logo-icon {
+      width: 30px; height: 30px;
+      background: var(--black);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .logo-icon svg { width: 16px; height: 16px; }
+
+    .nav-links {
+      display: flex; align-items: center; gap: 32px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 14px; font-weight: 500;
+      color: var(--text-mid); text-decoration: none;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-cta {
+      background: var(--accent);
+      color: var(--black);
+      font-size: 14px; font-weight: 700;
+      border: none; border-radius: 100px;
+      padding: 9px 20px;
+      cursor: pointer; text-decoration: none;
+      transition: opacity 0.15s;
+    }
+    .nav-cta:hover { opacity: 0.85; }
+
+    /* ── HERO ── */
+    .hero {
+      position: relative;
+      width: 100%; height: 100vh;
+      min-height: 600px;
+      overflow: hidden;
+    }
+
+    .hero-img {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to bottom, rgba(0,0,0,0) 50%, rgba(0,0,0,0.65) 100%),
+        url('https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=1600&q=80&auto=format&fit=crop') center/cover no-repeat;
+    }
+
+    .hero-content {
+      position: absolute;
+      bottom: 64px; left: 48px; right: 48px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+    }
+
+    .hero-heading {
+      font-size: clamp(48px, 7vw, 88px);
+      font-weight: 900;
+      letter-spacing: -3px;
+      line-height: 0.95;
+      color: var(--white);
+      max-width: 700px;
+    }
+
+    .hero-right {
+      display: flex; flex-direction: column;
+      align-items: flex-end; gap: 20px;
+      flex-shrink: 0;
+    }
+
+    .hero-sub {
+      font-size: 16px; color: rgba(255,255,255,0.75);
+      max-width: 280px; text-align: right; line-height: 1.6;
+    }
+
+    .hero-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--accent);
+      color: var(--black);
+      font-size: 15px; font-weight: 700;
+      border-radius: 100px; padding: 13px 28px;
+      text-decoration: none;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .hero-btn:hover { opacity: 0.88; transform: translateY(-2px); }
+
+    /* ── INTRO ── */
+    .intro {
+      padding: 100px 48px;
+      background: var(--white);
+    }
+
+    .section-label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 600; letter-spacing: 0.5px;
+      color: var(--text-soft); margin-bottom: 40px;
+      justify-content: center;
+    }
+
+    .section-label::before {
+      content: "";
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--black);
+    }
+
+    .intro-inner {
+      max-width: 1100px; margin: 0 auto;
+    }
+
+    .intro-heading {
+      font-size: clamp(36px, 4.5vw, 60px);
+      font-weight: 800; letter-spacing: -2px; line-height: 1.0;
+      margin-bottom: 12px; text-align: center;
+    }
+
+    .intro-subheading {
+      font-size: 16px; color: var(--text-mid); text-align: center;
+      margin-bottom: 56px; line-height: 1.6;
+    }
+
+    /* ── BENTO GRID ── */
+    .bento {
+      display: grid;
+      grid-template-columns: 1fr 0.72fr 1fr;
+      grid-template-rows: 1fr 1fr;
+      gap: 12px;
+      height: 560px;
+    }
+
+    .bento-cell {
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Large left — spans both rows */
+    .bento-cell.tall { grid-row: span 2; }
+
+    .bento-cell img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+    }
+
+    /* Overlay for photo cells */
+    .bento-cell .cell-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 55%);
+    }
+
+    .bento-cell .cell-label {
+      position: absolute;
+      bottom: 24px; left: 24px; right: 24px;
+      color: var(--white);
+    }
+
+    .bento-cell .cell-label .cell-icon {
+      width: 36px; height: 36px;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 10px;
+    }
+
+    .bento-cell .cell-label .cell-icon svg { width: 16px; height: 16px; }
+
+    .bento-cell .cell-label h4 {
+      font-size: 18px; font-weight: 700;
+      letter-spacing: -0.3px; line-height: 1.3;
+    }
+
+    /* Accent stat card */
+    .bento-cell.stat-card {
+      background: var(--accent);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 32px;
+      gap: 8px;
+    }
+
+    .stat-card-icon {
+      margin-bottom: 8px;
+    }
+
+    .stat-card-icon svg { width: 32px; height: 32px; }
+
+    .stat-card-num {
+      font-size: 56px; font-weight: 900;
+      letter-spacing: -3px; line-height: 1;
+      color: var(--black);
+    }
+
+    .stat-card-desc {
+      font-size: 14px; font-weight: 600;
+      color: rgba(0,0,0,0.6); line-height: 1.4;
+      max-width: 160px;
+    }
+
+    @media (max-width: 900px) {
+      .bento {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto;
+        height: auto;
+      }
+      .bento-cell.tall { grid-row: span 1; height: 280px; }
+      .bento-cell { height: 220px; }
+      .bento-cell.stat-card { height: 220px; }
+    }
+
+    @media (max-width: 560px) {
+      .bento { grid-template-columns: 1fr; }
+      .bento-cell, .bento-cell.tall { height: 260px; grid-row: span 1; }
+    }
+
+    /* ── FEATURES CAROUSEL ── */
+    .feature-cards-section {
+      padding: 0 48px 100px;
+      background: var(--white);
+    }
+
+    .feature-cards-header {
+      max-width: 1100px; margin: 0 auto 40px;
+      display: flex; align-items: flex-end; justify-content: space-between;
+    }
+
+    .feature-cards-heading {
+      font-size: clamp(28px, 3.5vw, 44px);
+      font-weight: 800; letter-spacing: -1.5px; line-height: 1.05;
+    }
+
+    .carousel-nav {
+      display: flex; gap: 8px;
+    }
+
+    .carousel-btn {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .carousel-btn:hover { opacity: 0.85; transform: scale(0.96); }
+    .carousel-btn svg { width: 16px; height: 16px; }
+
+    .cards-track-wrapper {
+      max-width: 1100px; margin: 0 auto;
+      overflow: hidden;
+    }
+
+    .cards-track {
+      display: flex; gap: 16px;
+      transition: transform 0.5s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    .feature-card {
+      flex: 0 0 calc(33.33% - 11px);
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+      aspect-ratio: 3/4;
+      cursor: pointer;
+    }
+
+    .feature-card-img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+
+    .feature-card:hover .feature-card-img { transform: scale(1.04); }
+
+    .feature-card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.75) 30%, transparent 70%);
+    }
+
+    .feature-card-body {
+      position: absolute;
+      bottom: 28px; left: 28px; right: 28px;
+    }
+
+    .feature-card-tag {
+      display: inline-block;
+      background: var(--accent);
+      color: var(--black);
+      font-size: 11px; font-weight: 700;
+      border-radius: 100px; padding: 3px 10px;
+      margin-bottom: 10px; letter-spacing: 0.3px;
+    }
+
+    .feature-card-body h3 {
+      font-size: 20px; font-weight: 700;
+      color: var(--white); letter-spacing: -0.3px;
+      margin-bottom: 6px;
+    }
+
+    .feature-card-body p {
+      font-size: 13px; color: rgba(255,255,255,0.7); line-height: 1.55;
+    }
+
+    /* ── FEATURES ACCORDION ── */
+    .accordion-section {
+      padding: 100px 48px;
+      background: var(--bg);
+    }
+
+    .accordion-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 80px; align-items: start;
+    }
+
+    .accordion-heading {
+      font-size: clamp(28px, 3.5vw, 44px);
+      font-weight: 800; letter-spacing: -1.5px; line-height: 1.05;
+      margin-bottom: 8px;
+    }
+
+    .accordion-sub {
+      font-size: 15px; color: var(--text-mid); margin-bottom: 40px; line-height: 1.6;
+    }
+
+    .accordion-list { list-style: none; }
+
+    .accordion-item {
+      border-top: 1px solid var(--border);
+    }
+
+    .accordion-item:last-child { border-bottom: 1px solid var(--border); }
+
+    .accordion-trigger {
+      width: 100%;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 20px 0;
+      background: none; border: none; cursor: pointer;
+      text-align: left; gap: 16px;
+    }
+
+    .accordion-trigger-left {
+      display: flex; align-items: center; gap: 14px;
+    }
+
+    .accordion-icon-wrap {
+      width: 36px; height: 36px; flex-shrink: 0;
+      background: rgba(213,255,69,0.18);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .accordion-icon-wrap svg { width: 16px; height: 16px; }
+
+    .accordion-title {
+      font-size: 15px; font-weight: 600; color: var(--text);
+    }
+
+    .accordion-toggle {
+      width: 28px; height: 28px; flex-shrink: 0;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .accordion-item.open .accordion-toggle {
+      background: var(--black);
+    }
+
+    .accordion-toggle svg { width: 12px; height: 12px; transition: transform 0.3s; }
+    .accordion-item.open .accordion-toggle svg { transform: rotate(45deg); }
+    .accordion-item.open .accordion-toggle svg path { stroke: white; }
+
+    .accordion-body {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.35s ease, padding 0.35s ease;
+    }
+
+    .accordion-item.open .accordion-body {
+      max-height: 200px;
+      padding-bottom: 20px;
+    }
+
+    .accordion-body p {
+      font-size: 14px; color: var(--text-mid); line-height: 1.65;
+      padding-left: 50px;
+    }
+
+    .accordion-photo {
+      border-radius: 20px;
+      overflow: hidden;
+      position: sticky;
+      top: 88px;
+    }
+
+    .accordion-photo img {
+      width: 100%; height: 480px; object-fit: cover;
+      display: block;
+    }
+
+    .accordion-photo-caption {
+      background: var(--white);
+      padding: 20px 24px;
+      border: 1px solid var(--border);
+      border-top: none;
+      border-bottom-left-radius: 20px;
+      border-bottom-right-radius: 20px;
+    }
+
+    .caption-stats {
+      display: flex; gap: 32px;
+    }
+
+    .caption-stat-num {
+      font-size: 24px; font-weight: 800; letter-spacing: -0.5px;
+      color: var(--text);
+    }
+
+    .caption-stat-label {
+      font-size: 12px; color: var(--text-soft); margin-top: 2px;
+    }
+
+    /* ── STATS ── */
+    .stats-section {
+      padding: 100px 48px;
+      background: var(--black);
+    }
+
+    .stats-inner {
+      max-width: 1100px; margin: 0 auto;
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 64px; align-items: center;
+    }
+
+    .stats-copy h2 {
+      font-size: clamp(32px, 4vw, 52px);
+      font-weight: 800; letter-spacing: -1.5px; line-height: 1.05;
+      color: var(--white); margin-bottom: 20px;
+    }
+
+    .stats-copy p {
+      font-size: 16px; color: rgba(255,255,255,0.5); line-height: 1.65; max-width: 380px;
+    }
+
+    .stats-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 1px; background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 16px; overflow: hidden;
+    }
+
+    .stat-cell {
+      background: var(--black); padding: 36px 28px;
+    }
+
+    .stat-big {
+      font-size: 48px; font-weight: 900; letter-spacing: -2px;
+      line-height: 1; color: var(--accent); margin-bottom: 8px;
+    }
+
+    .stat-desc {
+      font-size: 13px; color: rgba(255,255,255,0.45);
+    }
+
+    /* ── TESTIMONIALS ── */
+    .testimonials {
+      padding: 100px 48px;
+      background: var(--white);
+    }
+
+    .testimonials-inner {
+      max-width: 1100px; margin: 0 auto;
+    }
+
+    .testimonial-main {
+      display: grid; grid-template-columns: 420px 1fr;
+      gap: 80px; align-items: center;
+      margin-top: 56px;
+    }
+
+    .testimonial-photo {
+      border-radius: 20px;
+      overflow: hidden;
+      aspect-ratio: 4/5;
+    }
+
+    .testimonial-photo img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+
+    .testimonial-content {}
+
+    .quote-mark {
+      font-size: 80px; line-height: 1; color: var(--accent);
+      font-family: Georgia, serif; margin-bottom: -16px;
+    }
+
+    .testimonial-quote {
+      font-size: clamp(22px, 2.5vw, 30px);
+      font-weight: 700; letter-spacing: -0.5px;
+      line-height: 1.35; color: var(--text);
+      margin-bottom: 32px;
+    }
+
+    .testimonial-quote em { font-style: normal; color: var(--text-mid); }
+
+    .testimonial-attribution {
+      display: flex; align-items: center; gap: 14px;
+      padding-top: 28px;
+      border-top: 1px solid var(--border);
+    }
+
+    .attribution-avatar {
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; font-weight: 800; color: var(--black);
+      flex-shrink: 0;
+    }
+
+    .attribution-name { font-size: 15px; font-weight: 700; }
+    .attribution-role { font-size: 13px; color: var(--text-soft); }
+
+    .testimonial-nav {
+      display: flex; gap: 8px; margin-top: 32px;
+    }
+
+    .t-nav-btn {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: opacity 0.15s;
+    }
+    .t-nav-btn:hover { opacity: 0.8; }
+    .t-nav-btn svg { width: 16px; height: 16px; }
+    .t-nav-btn.ghost {
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+
+    .t-counter {
+      font-size: 13px; color: var(--text-soft);
+      align-self: center; margin-left: 8px;
+    }
+
+    /* ── FAQ ── */
+    .faq-section {
+      padding: 100px 48px;
+      background: var(--bg);
+    }
+
+    .faq-inner {
+      max-width: 720px; margin: 0 auto;
+    }
+
+    .faq-heading {
+      font-size: clamp(28px, 3.5vw, 44px);
+      font-weight: 800; letter-spacing: -1.5px; margin-bottom: 48px;
+    }
+
+    .faq-item {
+      border-top: 1px solid var(--border);
+    }
+    .faq-item:last-child { border-bottom: 1px solid var(--border); }
+
+    .faq-trigger {
+      width: 100%; display: flex;
+      align-items: center; justify-content: space-between;
+      padding: 22px 0; background: none; border: none;
+      cursor: pointer; text-align: left; gap: 16px;
+    }
+
+    .faq-q {
+      font-size: 15px; font-weight: 600; color: var(--text);
+    }
+
+    .faq-plus {
+      width: 28px; height: 28px; flex-shrink: 0;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .faq-item.open .faq-plus { background: var(--black); }
+    .faq-plus svg { width: 12px; height: 12px; transition: transform 0.3s; }
+    .faq-item.open .faq-plus svg { transform: rotate(45deg); }
+    .faq-item.open .faq-plus svg path { stroke: white; }
+
+    .faq-body {
+      overflow: hidden; max-height: 0;
+      transition: max-height 0.35s ease, padding 0.35s ease;
+    }
+
+    .faq-item.open .faq-body {
+      max-height: 200px; padding-bottom: 20px;
+    }
+
+    .faq-body p {
+      font-size: 14px; color: var(--text-mid); line-height: 1.7;
+    }
+
+    /* ── CTA WAITLIST ── */
+    .cta-section {
+      padding: 48px;
+      background: var(--white);
+    }
+
+    .cta-inner {
+      position: relative;
+      border-radius: 24px;
+      overflow: hidden;
+      min-height: 380px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 72px 48px;
+    }
+
+    .cta-bg {
+      position: absolute; inset: 0;
+      background:
+        linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45)),
+        url('https://images.unsplash.com/photo-1544717305-2782549b5136?w=1400&q=80&auto=format&fit=crop') center/cover no-repeat;
+      filter: blur(0px);
+    }
+
+    .cta-content { position: relative; z-index: 1; }
+
+    .cta-label {
+      font-size: 12px; font-weight: 700; letter-spacing: 1px;
+      text-transform: uppercase; color: rgba(255,255,255,0.6);
+      margin-bottom: 16px;
+    }
+
+    .cta-heading {
+      font-size: clamp(28px, 4vw, 48px);
+      font-weight: 900; letter-spacing: -1.5px; line-height: 1.05;
+      color: var(--white); margin-bottom: 36px;
+    }
+
+    .cta-form {
+      display: flex; gap: 0;
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 100px;
+      padding: 6px 6px 6px 20px;
+      max-width: 440px; width: 100%;
+      backdrop-filter: blur(10px);
+    }
+
+    .cta-input {
+      flex: 1; background: none; border: none; outline: none;
+      font-size: 14px; color: var(--white);
+      placeholder-color: rgba(255,255,255,0.5);
+    }
+
+    .cta-input::placeholder { color: rgba(255,255,255,0.55); }
+
+    .cta-submit {
+      background: var(--accent); color: var(--black);
+      font-size: 13px; font-weight: 700;
+      border: none; border-radius: 100px;
+      padding: 10px 20px; cursor: pointer;
+      transition: opacity 0.15s;
+      white-space: nowrap;
+    }
+    .cta-submit:hover { opacity: 0.85; }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 56px 48px 40px;
+      background: var(--white);
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-top {
+      display: flex; justify-content: space-between;
+      gap: 40px; flex-wrap: wrap;
+      margin-bottom: 48px;
+    }
+
+    .footer-brand {
+      font-size: 17px; font-weight: 800; letter-spacing: -0.3px;
+      color: var(--text); margin-bottom: 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .footer-tagline {
+      font-size: 13px; color: var(--text-soft);
+      max-width: 240px; line-height: 1.6;
+    }
+
+    .footer-socials {
+      display: flex; gap: 12px; margin-top: 20px;
+    }
+
+    .social-link {
+      width: 36px; height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-soft); text-decoration: none;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .social-link:hover { border-color: var(--text); color: var(--text); }
+    .social-link svg { width: 14px; height: 14px; }
+
+    .footer-nav h5 {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
+      text-transform: uppercase; color: var(--text-soft);
+      margin-bottom: 16px;
+    }
+
+    .footer-nav ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+
+    .footer-nav ul a {
+      font-size: 14px; color: var(--text-mid);
+      text-decoration: none; transition: color 0.15s;
+    }
+    .footer-nav ul a:hover { color: var(--text); }
+
+    .footer-bottom {
+      padding-top: 28px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+    }
+
+    .footer-bottom p { font-size: 12px; color: var(--text-soft); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+      nav { padding: 0 20px; }
+      .nav-links { display: none; }
+
+      .hero-content { bottom: 40px; left: 24px; right: 24px; flex-direction: column; align-items: flex-start; gap: 24px; }
+      .hero-right { align-items: flex-start; }
+      .hero-sub { text-align: left; }
+
+      .intro, .feature-cards-section, .accordion-section,
+      .stats-section, .testimonials, .faq-section,
+      .cta-section, footer { padding-left: 20px; padding-right: 20px; }
+
+      .intro-grid { grid-template-columns: 1fr; }
+
+      .accordion-inner { grid-template-columns: 1fr; }
+      .accordion-photo { display: none; }
+
+      .stats-inner { grid-template-columns: 1fr; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+
+      .testimonial-main { grid-template-columns: 1fr; }
+      .testimonial-photo { max-height: 320px; }
+
+      .feature-card { flex: 0 0 calc(80% - 8px); }
+
+      .footer-top { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="#">
+      <div class="logo-icon">
+        <svg viewBox="0 0 16 16" fill="none">
+          <path d="M1 8h3l2-5 3 10 2-5h4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      BetFit
+    </a>
+    <ul class="nav-links">
+      <li><a href="#about">About</a></li>
+      <li><a href="#features">Features</a></li>
+      <li><a href="#testimonials">Testimonials</a></li>
+      <li><a href="#faq">FAQ</a></li>
+    </ul>
+    <a class="nav-cta" href="#waitlist">Join waitlist</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-img"></div>
+    <div class="hero-content">
+      <h1 class="hero-heading">Turn every step into a win.</h1>
+      <div class="hero-right">
+        <p class="hero-sub">Compete with your team, track your progress, and finally look forward to Mondays.</p>
+        <a class="hero-btn" href="#waitlist">
+          Join waitlist now
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- INTRO -->
+  <section class="intro" id="about">
+    <div class="intro-inner">
+      <div class="section-label">Introduction</div>
+      <h2 class="intro-heading">Smarter. Faster. More Personal.</h2>
+      <p class="intro-subheading">Everything you need to move more, compete harder, and win together.</p>
+
+      <div class="bento">
+
+        <!-- Large left photo -->
+        <div class="bento-cell tall">
+          <img src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800&q=80&auto=format&fit=crop" alt="Athlete training" loading="lazy" />
+          <div class="cell-overlay"></div>
+          <div class="cell-label">
+            <div class="cell-icon">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M1 8h3l2-5 3 10 2-5h4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <h4>AI-driven insights tailored<br/>to your training style</h4>
+          </div>
+        </div>
+
+        <!-- Middle top — accent stat card -->
+        <div class="bento-cell stat-card">
+          <div class="stat-card-icon">
+            <svg viewBox="0 0 32 32" fill="none"><path d="M4 22l7-9 5 5 5-8 7 7" stroke="#0A0A0A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M26 14l3-3-3-3" stroke="#0A0A0A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <div class="stat-card-num">25%</div>
+          <div class="stat-card-desc">faster progress with real team competition</div>
+        </div>
+
+        <!-- Middle bottom — photo -->
+        <div class="bento-cell">
+          <img src="https://images.unsplash.com/photo-1483721310020-03333e577078?w=600&q=80&auto=format&fit=crop" alt="Running" loading="lazy" />
+          <div class="cell-overlay"></div>
+          <div class="cell-label">
+            <div class="cell-icon">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M8 2a3 3 0 100 6 3 3 0 000-6zM2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="white" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </div>
+            <h4>Live leaderboards &amp;<br/>team tracking</h4>
+          </div>
+        </div>
+
+        <!-- Right tall photo -->
+        <div class="bento-cell tall">
+          <img src="https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800&q=80&auto=format&fit=crop" alt="Hydration" loading="lazy" />
+          <div class="cell-overlay"></div>
+          <div class="cell-label">
+            <div class="cell-icon">
+              <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="white" stroke-width="1.6"/><path d="M8 5v3.5l2.5 1.5" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <h4>Personalised workout<br/>recommendations</h4>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURE CARDS CAROUSEL -->
+  <section class="feature-cards-section" id="features">
+    <div class="feature-cards-header">
+      <h2 class="feature-cards-heading">Your AI coach,<br/>always in your pocket.</h2>
+      <div class="carousel-nav">
+        <button class="carousel-btn" id="prevBtn" aria-label="Previous">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="carousel-btn" id="nextBtn" aria-label="Next">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="cards-track-wrapper">
+      <div class="cards-track" id="cardsTrack">
+        <div class="feature-card">
+          <img class="feature-card-img" src="https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=600&q=80&auto=format&fit=crop" alt="Real-time steps" loading="lazy" />
+          <div class="feature-card-overlay"></div>
+          <div class="feature-card-body">
+            <span class="feature-card-tag">Live Sync</span>
+            <h3>Real-time Steps</h3>
+            <p>Your Apple Health data syncs automatically — no manual entry, ever.</p>
+          </div>
+        </div>
+        <div class="feature-card">
+          <img class="feature-card-img" src="https://images.unsplash.com/photo-1529516548873-9ce57c8f155e?w=600&q=80&auto=format&fit=crop" alt="Team challenges" loading="lazy" />
+          <div class="feature-card-overlay"></div>
+          <div class="feature-card-body">
+            <span class="feature-card-tag">Team Mode</span>
+            <h3>Team Challenges</h3>
+            <p>Form squads, pool your steps, and rise the leaderboard together.</p>
+          </div>
+        </div>
+        <div class="feature-card">
+          <img class="feature-card-img" src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80&auto=format&fit=crop" alt="Leaderboards" loading="lazy" />
+          <div class="feature-card-overlay"></div>
+          <div class="feature-card-body">
+            <span class="feature-card-tag">Live Rankings</span>
+            <h3>Step Leaderboards</h3>
+            <p>See your rank update in real time. Every walk is a tactical move.</p>
+          </div>
+        </div>
+        <div class="feature-card">
+          <img class="feature-card-img" src="https://images.unsplash.com/photo-1483721310020-03333e577078?w=600&q=80&auto=format&fit=crop" alt="Distance tracking" loading="lazy" />
+          <div class="feature-card-overlay"></div>
+          <div class="feature-card-body">
+            <span class="feature-card-tag">Distance</span>
+            <h3>Distance Mode</h3>
+            <p>Go beyond steps — track kilometres walked or run across your challenge.</p>
+          </div>
+        </div>
+        <div class="feature-card">
+          <img class="feature-card-img" src="https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=600&q=80&auto=format&fit=crop" alt="C25K" loading="lazy" />
+          <div class="feature-card-overlay"></div>
+          <div class="feature-card-body">
+            <span class="feature-card-tag">Coming Soon</span>
+            <h3>C25K Programme</h3>
+            <p>Built-in Couch to 5K challenge mode for teams ready to start running.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES ACCORDION -->
+  <section class="accordion-section">
+    <div class="accordion-inner">
+      <!-- Left -->
+      <div>
+        <div class="section-label">Why it works</div>
+        <h2 class="accordion-heading">Built for real workplaces.</h2>
+        <p class="accordion-sub">Every feature in BetFit is designed around the way teams actually work — and move.</p>
+
+        <ul class="accordion-list" id="accordionList">
+          <li class="accordion-item open">
+            <button class="accordion-trigger">
+              <div class="accordion-trigger-left">
+                <div class="accordion-icon-wrap">
+                  <svg viewBox="0 0 16 16" fill="none"><path d="M1 8h3l2-5 3 10 2-5h4" stroke="#0A0A0A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span class="accordion-title">Proven Accuracy</span>
+              </div>
+              <div class="accordion-toggle">
+                <svg viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+            </button>
+            <div class="accordion-body">
+              <p>Every step and distance metric is sourced directly from Apple HealthKit — the same professional-grade sensor framework used by elite athletes and medical researchers.</p>
+            </div>
+          </li>
+          <li class="accordion-item">
+            <button class="accordion-trigger">
+              <div class="accordion-trigger-left">
+                <div class="accordion-icon-wrap">
+                  <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="#0A0A0A" stroke-width="1.8"/><path d="M8 5v3l2 2" stroke="#0A0A0A" stroke-width="1.5" stroke-linecap="round"/></svg>
+                </div>
+                <span class="accordion-title">Automatic Sync</span>
+              </div>
+              <div class="accordion-toggle">
+                <svg viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+            </button>
+            <div class="accordion-body">
+              <p>Background HealthKit delivery means your steps sync hourly without opening the app. Dashboard refreshes happen automatically every time you check in.</p>
+            </div>
+          </li>
+          <li class="accordion-item">
+            <button class="accordion-trigger">
+              <div class="accordion-trigger-left">
+                <div class="accordion-icon-wrap">
+                  <svg viewBox="0 0 16 16" fill="none"><path d="M13 4L7 10 4 7" stroke="#0A0A0A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+                <span class="accordion-title">Fair Compete</span>
+              </div>
+              <div class="accordion-toggle">
+                <svg viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+            </button>
+            <div class="accordion-body">
+              <p>Row-level security ensures each user can only read their own raw data. Leaderboards show aggregated totals only — no raw health records are ever shared with teammates.</p>
+            </div>
+          </li>
+          <li class="accordion-item">
+            <button class="accordion-trigger">
+              <div class="accordion-trigger-left">
+                <div class="accordion-icon-wrap">
+                  <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1.5" stroke="#0A0A0A" stroke-width="1.8"/><rect x="9" y="2" width="5" height="5" rx="1.5" stroke="#0A0A0A" stroke-width="1.8"/><rect x="2" y="9" width="5" height="5" rx="1.5" stroke="#0A0A0A" stroke-width="1.8"/><rect x="9" y="9" width="5" height="5" rx="1.5" stroke="#0A0A0A" stroke-width="1.8"/></svg>
+                </div>
+                <span class="accordion-title">Team Cohesion</span>
+              </div>
+              <div class="accordion-toggle">
+                <svg viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+            </button>
+            <div class="accordion-body">
+              <p>Challenges create a natural reason for colleagues to connect outside of meetings. Companies see measurable improvements in team morale within the first month.</p>
+            </div>
+          </li>
+          <li class="accordion-item">
+            <button class="accordion-trigger">
+              <div class="accordion-trigger-left">
+                <div class="accordion-icon-wrap">
+                  <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="3" stroke="#0A0A0A" stroke-width="1.8"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="#0A0A0A" stroke-width="1.8" stroke-linecap="round"/></svg>
+                </div>
+                <span class="accordion-title">Athlete Community</span>
+              </div>
+              <div class="accordion-toggle">
+                <svg viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>
+              </div>
+            </button>
+            <div class="accordion-body">
+              <p>Every BetFit challenge builds a micro-community around shared movement goals. Friendly competition creates belonging — and belonging keeps people moving.</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Right: sticky photo -->
+      <div class="accordion-photo">
+        <img src="https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=800&q=80&auto=format&fit=crop" alt="Running stats" />
+        <div class="accordion-photo-caption">
+          <div class="caption-stats">
+            <div>
+              <div class="caption-stat-num">12,480</div>
+              <div class="caption-stat-label">Steps today</div>
+            </div>
+            <div>
+              <div class="caption-stat-num">8.7 km</div>
+              <div class="caption-stat-label">Distance</div>
+            </div>
+            <div>
+              <div class="caption-stat-num">#2</div>
+              <div class="caption-stat-label">Current rank</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats-section">
+    <div class="stats-inner">
+      <div class="stats-copy">
+        <div class="section-label" style="color:rgba(255,255,255,0.4);">By the numbers</div>
+        <h2>The numbers<br/>don't lie.</h2>
+        <p>Teams using BetFit consistently report healthier habits, better morale, and more connected workplaces — all from a simple step challenge.</p>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-cell">
+          <div class="stat-big">2M+</div>
+          <div class="stat-desc">Steps tracked daily</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-big">500+</div>
+          <div class="stat-desc">Companies onboard</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-big">4.9★</div>
+          <div class="stat-desc">App Store rating</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-big">94%</div>
+          <div class="stat-desc">Challenge completion</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section class="testimonials" id="testimonials">
+    <div class="testimonials-inner">
+      <div class="section-label">Testimonials</div>
+      <div class="testimonial-main" id="testimonialBlock">
+        <div class="testimonial-photo">
+          <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=80&auto=format&fit=crop" alt="Testimonial" id="testimonialImg" />
+        </div>
+        <div class="testimonial-content">
+          <div class="quote-mark">"</div>
+          <p class="testimonial-quote" id="testimonialQuote">Smart coaching for every kilometre. BetFit completely changed how our team moves. Steps went from 4k to over 10k a day in two weeks — and nobody had to be told to do it.</p>
+          <div class="testimonial-attribution">
+            <div class="attribution-avatar" id="testimonialAvatar">P</div>
+            <div>
+              <div class="attribution-name" id="testimonialName">Priya Mehta</div>
+              <div class="attribution-role" id="testimonialRole">Head of People, TechCo</div>
+            </div>
+          </div>
+          <div class="testimonial-nav">
+            <button class="t-nav-btn ghost" id="tPrev">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M10 3L5 8l5 5" stroke="#111" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button class="t-nav-btn" id="tNext">
+              <svg viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="#000" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <span class="t-counter" id="tCounter">1/3</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="faq-section" id="faq">
+    <div class="faq-inner">
+      <div class="section-label">FAQ</div>
+      <h2 class="faq-heading">Frequently asked<br/>questions.</h2>
+
+      <div id="faqList">
+        <div class="faq-item open">
+          <button class="faq-trigger">
+            <span class="faq-q">What devices does BetFit support?</span>
+            <div class="faq-plus">
+              <svg viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+          </button>
+          <div class="faq-body">
+            <p>BetFit currently supports iPhone with iOS 16 or later. Step and distance data is read from Apple Health, which aggregates data from iPhone, Apple Watch, and any other HealthKit-compatible device.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-trigger">
+            <span class="faq-q">Does BetFit work without a smartwatch?</span>
+            <div class="faq-plus">
+              <svg viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+          </button>
+          <div class="faq-body">
+            <p>Yes. Your iPhone's built-in motion coprocessor tracks steps automatically — no Apple Watch or wearable is required. Just carry your phone and BetFit handles the rest.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-trigger">
+            <span class="faq-q">How do company challenges work?</span>
+            <div class="faq-plus">
+              <svg viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+          </button>
+          <div class="faq-body">
+            <p>An admin creates a challenge with a goal (steps, distance, or C25K), a duration, and a company code. Employees download the app, enter the code, and join teams. Leaderboards update automatically for the duration of the challenge.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-trigger">
+            <span class="faq-q">Is my health data shared with anyone?</span>
+            <div class="faq-plus">
+              <svg viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+          </button>
+          <div class="faq-body">
+            <p>No. Your raw health data is never visible to teammates or admins. Only aggregated daily step and distance totals appear on leaderboards. Your data is stored with row-level security and never sold to third parties.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-trigger">
+            <span class="faq-q">How much does BetFit cost?</span>
+            <div class="faq-plus">
+              <svg viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+          </button>
+          <div class="faq-body">
+            <p>BetFit is free to download and use. We're currently in early access — join the waitlist to get priority access and be the first to know about our team pricing plans.</p>
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-trigger">
+            <span class="faq-q">When will BetFit be available?</span>
+            <div class="faq-plus">
+              <svg viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="#000" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+          </button>
+          <div class="faq-body">
+            <p>BetFit is in TestFlight beta and rolling out to teams now. Join the waitlist to secure your spot — early access teams get free premium features for the first year.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA WAITLIST -->
+  <section class="cta-section" id="waitlist">
+    <div class="cta-inner">
+      <div class="cta-bg"></div>
+      <div class="cta-content">
+        <div class="cta-label">Early Access</div>
+        <h2 class="cta-heading">Your team's fittest<br/>days are ahead.</h2>
+        <form class="cta-form" onsubmit="return false;">
+          <input class="cta-input" type="email" placeholder="jane@company.com" />
+          <button class="cta-submit" type="submit">Join the waitlist</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand">
+          <div class="logo-icon">
+            <svg viewBox="0 0 16 16" fill="none"><path d="M1 8h3l2-5 3 10 2-5h4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          BetFit
+        </div>
+        <p class="footer-tagline">Compete. Move. Win. The fitness app that makes your team actually want to get their steps in.</p>
+        <div class="footer-socials">
+          <a class="social-link" href="#" aria-label="Instagram">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+          </a>
+          <a class="social-link" href="#" aria-label="LinkedIn">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2zm2-5a2 2 0 110 4 2 2 0 010-4z"/></svg>
+          </a>
+        </div>
+      </div>
+      <div class="footer-nav">
+        <h5>Navigation</h5>
+        <ul>
+          <li><a href="#about">About</a></li>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#testimonials">Testimonials</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="#waitlist">Waitlist</a></li>
+        </ul>
+      </div>
+      <div class="footer-nav">
+        <h5>Legal</h5>
+        <ul>
+          <li><a href="terms.html">Terms &amp; Conditions</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Cookie Policy</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 BetFit. All rights reserved.</p>
+      <p>Made with ♥ for active teams.</p>
+    </div>
+  </footer>
+
+  <script>
+    // Carousel
+    const track = document.getElementById('cardsTrack');
+    const cards = track.children;
+    let currentIndex = 0;
+
+    function getCardWidth() {
+      return cards[0].offsetWidth + 16;
+    }
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      currentIndex = Math.min(currentIndex + 1, cards.length - 3);
+      track.style.transform = `translateX(-${currentIndex * getCardWidth()}px)`;
+    });
+
+    document.getElementById('prevBtn').addEventListener('click', () => {
+      currentIndex = Math.max(currentIndex - 1, 0);
+      track.style.transform = `translateX(-${currentIndex * getCardWidth()}px)`;
+    });
+
+    // Accordion
+    document.querySelectorAll('.accordion-trigger').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.accordion-item');
+        const isOpen = item.classList.contains('open');
+        document.querySelectorAll('.accordion-item').forEach(i => i.classList.remove('open'));
+        if (!isOpen) item.classList.add('open');
+      });
+    });
+
+    // FAQ
+    document.querySelectorAll('.faq-trigger').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.faq-item');
+        const isOpen = item.classList.contains('open');
+        document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+        if (!isOpen) item.classList.add('open');
+      });
+    });
+
+    // Testimonials
+    const testimonials = [
+      {
+        quote: "Smart step tracking for every team. BetFit completely changed how our people move. Steps went from 4k to over 10k a day in two weeks — and nobody had to be told to do it.",
+        name: "Priya Mehta", role: "Head of People, TechCo",
+        avatar: "P", avatarColor: "#D5FF45",
+        img: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=600&q=80&auto=format&fit=crop"
+      },
+      {
+        quote: "I've tried every company wellness app. BetFit is the first one people actually open every morning without being forced. The leaderboard is genuinely addictive.",
+        name: "Dan O'Brien", role: "Wellness Lead, FinanceGroup",
+        avatar: "D", avatarColor: "#4CAF50",
+        img: "https://images.unsplash.com/photo-1530822847156-5df684ec5105?w=600&q=80&auto=format&fit=crop"
+      },
+      {
+        quote: "Setup took under 10 minutes for 200 staff. The HealthKit integration means there's no gaming it — what you walk is what you get. Exactly what we needed.",
+        name: "Leila Nour", role: "Operations Director, BuildCorp",
+        avatar: "L", avatarColor: "#5C5FC4",
+        img: "https://images.unsplash.com/photo-1544717305-2782549b5136?w=600&q=80&auto=format&fit=crop"
+      }
+    ];
+
+    let tIndex = 0;
+
+    function updateTestimonial(i) {
+      const t = testimonials[i];
+      document.getElementById('testimonialQuote').textContent = t.quote;
+      document.getElementById('testimonialName').textContent = t.name;
+      document.getElementById('testimonialRole').textContent = t.role;
+      document.getElementById('testimonialAvatar').textContent = t.avatar;
+      document.getElementById('testimonialAvatar').style.background = t.avatarColor;
+      document.getElementById('testimonialImg').src = t.img;
+      document.getElementById('tCounter').textContent = `${i + 1}/${testimonials.length}`;
+    }
+
+    document.getElementById('tNext').addEventListener('click', () => {
+      tIndex = (tIndex + 1) % testimonials.length;
+      updateTestimonial(tIndex);
+    });
+
+    document.getElementById('tPrev').addEventListener('click', () => {
+      tIndex = (tIndex - 1 + testimonials.length) % testimonials.length;
+      updateTestimonial(tIndex);
+    });
+  </script>
+
+</body>
+</html>
