@@ -1,9 +1,14 @@
 [build]
-  publish = "web"
+  publish = "."
 
 [[redirects]]
   from = "/"
-  to = "/index.html"
+  to = "/login.html"
+  status = 200
+
+[[redirects]]
+  from = "/dashboard"
+  to = "/dashboard.html"
   status = 200
 
 [[headers]]
