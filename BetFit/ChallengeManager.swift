@@ -46,8 +46,11 @@ final class ChallengeManager: ObservableObject {
             let data = try await AuthManager.shared.get(
                 path: "challenges?is_public=eq.true&select=*&order=start_date.asc"
             )
-            return (try? JSONDecoder().decode([BFChallenge].self, from: data)) ?? []
+            let challenges = (try? JSONDecoder().decode([BFChallenge].self, from: data)) ?? []
+            print("✓ Fetched \(challenges.count) public challenges")
+            return challenges
         } catch {
+            print("✗ Error fetching public challenges: \(error)")
             return []
         }
     }
