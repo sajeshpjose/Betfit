@@ -198,7 +198,7 @@ private struct YourTeamCard: View {
     private var members: [BFTeamMember] { manager.teamMembers[teamId] ?? [] }
     private var spotsLeft: Int { max(0, challenge.teamSizeMax - members.count) }
     private var inviteCode: String { String(teamId.prefix(8)).uppercased() }
-    private var inviteURL: String { "https://habet.app/join/\(teamId)" }
+    private var inviteURL: String { "https://betfit.now/join/\(teamId)" }
     private var total: Int { stepSync.todaySteps }
     private var progress: Double { min(Double(total) / Double(challenge.dailyGoal * max(members.count, 1)), 1.0) }
 

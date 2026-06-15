@@ -6,10 +6,10 @@
 //
 //   betfit://auth/callback          → OAuth callback (existing)
 //   betfit://join/{teamId}          → invite link (custom scheme)
-//   https://habet.app/join/{teamId}          → invite link (Universal Link)
+//   https://betfit.now/join/{teamId}          → invite link (Universal Link)
 //
 // Universal Links require an apple-app-site-association (AASA) file
-// hosted at https://habet.app/.well-known/apple-app-site-association
+// hosted at https://betfit.now/.well-known/apple-app-site-association
 // with the following content:
 //
 //   {
@@ -57,7 +57,7 @@ final class DeepLinkManager: ObservableObject {
             return
         }
 
-        // Universal Link: https://habet.app/join/{teamId}
+        // Universal Link: https://betfit.now/join/{teamId}
         let components = url.pathComponents  // ["/" , "join", "{teamId}"]
         if components.count >= 3, components[1] == "join" {
             let teamId = components[2]
