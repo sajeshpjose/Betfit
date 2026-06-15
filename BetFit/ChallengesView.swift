@@ -116,7 +116,10 @@ struct ChallengesView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(Color.bfBg, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .task { await manager.loadChallenges() }
+            .task {
+                print("🔄 ChallengesView appeared — loading challenges")
+                await manager.loadChallenges()
+            }
             // ── Deep link: navigate straight to the challenge from an invite link
             .navigationDestination(item: $deepLinkChallenge) { challenge in
                 ChallengeDetailView(
