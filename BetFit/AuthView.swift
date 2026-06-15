@@ -8,8 +8,7 @@ import SwiftUI
 struct AuthView: View {
 
     @StateObject private var auth = AuthManager.shared
-    @State private var isLoadingApple  = false
-    @State private var isLoadingGoogle = false
+    @State private var isLoadingApple = false
 
     var body: some View {
         ZStack {
@@ -104,35 +103,7 @@ struct AuthView: View {
                             .background(Color.black)
                             .clipShape(Capsule())
                         }
-                        .disabled(isLoadingApple || isLoadingGoogle)
-
-                        // Google
-                        Button(action: {
-                            Task {
-                                isLoadingGoogle = true
-                                await auth.signInWithGoogle()
-                                isLoadingGoogle = false
-                            }
-                        }) {
-                            HStack(spacing: 10) {
-                                if isLoadingGoogle {
-                                    ProgressView().tint(.bfBlack)
-                                } else {
-                                    Image(systemName: "globe")
-                                        .font(.system(size: 18))
-                                        .foregroundColor(.blue)
-                                    Text("Continue with Google")
-                                        .font(.system(size: 15, weight: .semibold))
-                                        .foregroundColor(.bfBlack)
-                                }
-                            }
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 54)
-                            .background(Color.bfBgRaised)
-                            .clipShape(Capsule())
-                            .overlay(Capsule().stroke(Color.bfBorder, lineWidth: 0.5))
-                        }
-                        .disabled(isLoadingApple || isLoadingGoogle)
+                        .disabled(isLoadingApple)
                     }
 
                     Group {

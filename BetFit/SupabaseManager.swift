@@ -116,10 +116,10 @@ final class AuthManager: NSObject, ObservableObject, ASWebAuthenticationPresenta
         await performOAuth(provider: "apple")
     }
 
-    // ── Sign in with Google — in-app sheet via ASWebAuthenticationSession
-    func signInWithGoogle() async {
-        await performOAuth(provider: "google")
-    }
+    // ── Sign in with Google — disabled for MVP
+    // func signInWithGoogle() async {
+    //     await performOAuth(provider: "google")
+    // }
 
     // Presents OAuth in an in-app Safari sheet; no external browser needed.
     private func performOAuth(provider: String) async {
