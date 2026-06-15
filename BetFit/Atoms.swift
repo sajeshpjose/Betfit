@@ -162,7 +162,7 @@ struct BFButton: View {
     }
     private var foreground: Color {
         switch variant {
-        case .primary:     return .bfTextOnPrimary
+        case .primary:     return .bfTextOnPrimary  // black text on yellow background
         case .secondary:   return .white
         case .destructive: return .bfDestructive
         case .ghost:       return .bfTextWeak
