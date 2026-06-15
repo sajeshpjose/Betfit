@@ -1,6 +1,6 @@
 // ============================================================
 // Onboarding.swift
-// Betfit
+// BetFit
 // ============================================================
 // Covers all 4 onboarding steps:
 //   1. Welcome
@@ -135,7 +135,7 @@ struct WelcomeStep: View {
                 Color.bfPrimary.ignoresSafeArea(edges: .top)
 
                 VStack(spacing: 8) {
-                    Text("betfit.")
+                    Text("BetFit.")
                         .font(.system(size: 38, weight: .bold))
                         .foregroundColor(.bfBlack)
 
@@ -341,7 +341,7 @@ struct HealthPermissionsStep: View {
 
             Spacer().frame(height: 8)
 
-            Text("Betfit reads your steps and distance automatically.\nNo manual logging.")
+            Text("BetFit reads your steps and distance automatically.\nNo manual logging.")
                 .font(.system(size: 14))
                 .foregroundColor(.bfTextWeak)
                 .multilineTextAlignment(.center)
