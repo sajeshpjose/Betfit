@@ -70,20 +70,22 @@ struct OnboardingView: View {
 
     private func finish() {
         Task {
-            // Save text fields
-            try? await ProfileManager.shared.save(
-                fullName: profileName,
-                handle:   username.hasPrefix("@") ? username : "@\(username)",
-                company:  companyCode
-            )
-
-            // Upload avatar if one was chosen
+            // Upload avatar if one was chosen and get the URL
+            var avatarURL: String? = nil
             if let item = selectedPhoto,
                let data = try? await item.loadTransferable(type: Data.self),
                let uiImg = UIImage(data: data),
                let jpeg = uiImg.jpegData(compressionQuality: 0.8) {
-                _ = try? await ProfileManager.shared.uploadAvatar(imageData: jpeg)
+                avatarURL = try? await ProfileManager.shared.uploadAvatar(imageData: jpeg)
             }
+
+            // Save profile with avatar URL
+            try? await ProfileManager.shared.save(
+                fullName: profileName,
+                handle:   username.hasPrefix("@") ? username : "@\(username)",
+                company:  companyCode,
+                avatarURL: avatarURL
+            )
 
             withAnimation { hasCompletedOnboarding = true }
         }

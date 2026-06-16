@@ -112,6 +112,16 @@ struct DarkProfileHero: View {
 
     func formatLarge(_ n: Int) -> String { n >= 1000 ? String(format: "%.0fk", Double(n)/1000) : "\(n)" }
 
+    var initials: String {
+        let components = name.split(separator: " ").map { String($0) }
+        if components.count >= 2 {
+            return (components[0].prefix(1) + components[1].prefix(1)).uppercased()
+        } else if let first = components.first {
+            return first.prefix(2).uppercased()
+        }
+        return "?"
+    }
+
     var body: some View {
         VStack(spacing: 14) {
             PhotosPicker(selection: $selectedPhoto, matching: .images) {
@@ -121,7 +131,7 @@ struct DarkProfileHero: View {
                             img.resizable().scaledToFill().frame(width: 80, height: 80).clipShape(Circle())
                         } else {
                             Circle().fill(Color.bfPrimary).frame(width: 80, height: 80)
-                                .overlay(Text("SK").font(.system(size: 26, weight: .bold)).foregroundColor(.black))
+                                .overlay(Text(initials).font(.system(size: 26, weight: .bold)).foregroundColor(.black))
                         }
                     }
                     Circle().fill(Color.bfPrimary).frame(width: 24, height: 24)

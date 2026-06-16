@@ -86,13 +86,27 @@ final class ChallengeManager: ObservableObject {
         )
 
         // Parse returned team and cache it
-        if let team = try? JSONDecoder().decode(BFChallengeTeam.self, from: data) {
-            myTeams[challengeId.uuidString] = team
-            // Auto-add the creator as first member
-            try await addMember(teamId: team.id, userId: userId)
+        guard let team = try? JSONDecoder().decode(BFChallengeTeam.self, from: data) else {
+            print("❌ Failed to decode created team")
+            throw URLError(.badServerResponse)
         }
 
-        // Refresh lists
+        myTeams[challengeId.uuidString] = team
+        print("✓ Created team: \(team.name)")
+
+        // Auto-add the creator as first member
+        do {
+            try await addMember(teamId: team.id, userId: userId)
+            print("✓ Added user as team member")
+        } catch {
+            print("❌ Failed to add user as member: \(error)")
+            throw error
+        }
+
+        // Load the updated team with members to populate the UI
+        await loadTeam(for: challengeId)
+
+        // Refresh challenge lists
         await loadChallenges()
     }
 
@@ -119,17 +133,30 @@ final class ChallengeManager: ObservableObject {
                 path: "challenge_teams?challenge_id=eq.\(challengeId.uuidString)&created_by=eq.\(userId)&select=*&limit=1"
             )
             let teams = (try? JSONDecoder().decode([BFChallengeTeam].self, from: teamData)) ?? []
-            guard let team = teams.first else { return }
+            guard let team = teams.first else {
+                print("❌ No team found for challenge \(challengeId) created by user \(userId)")
+                return
+            }
             myTeams[challengeId.uuidString] = team
+            print("✓ Loaded team: \(team.name) (id: \(team.id))")
 
             // Fetch members of that team joined with their profiles
+            // Using the explicit join syntax: challenge_team_members → auth.users → profiles
             let memberData = try await AuthManager.shared.get(
-                path: "challenge_team_members?team_id=eq.\(team.id.uuidString)&select=user_id,profiles(full_name,handle,avatar_url)"
+                path: "challenge_team_members?team_id=eq.\(team.id.uuidString)&select=user_id,profiles!inner(full_name,handle,avatar_url)"
             )
-            let members = (try? JSONDecoder().decode([BFTeamMember].self, from: memberData)) ?? []
-            teamMembers[team.id.uuidString] = members
+
+            do {
+                let members = try JSONDecoder().decode([BFTeamMember].self, from: memberData)
+                print("✓ Loaded \(members.count) team members")
+                teamMembers[team.id.uuidString] = members
+            } catch let decodingError {
+                print("❌ Failed to decode team members: \(decodingError)")
+                print("Raw response: \(String(data: memberData, encoding: .utf8) ?? "unable to decode")")
+                teamMembers[team.id.uuidString] = []
+            }
         } catch {
-            print("loadTeam error: \(error)")
+            print("❌ loadTeam error: \(error)")
         }
     }
 
@@ -171,9 +198,10 @@ final class ChallengeManager: ObservableObject {
 
 // ── Team member model (joined with profiles)
 struct BFTeamMember: Identifiable, Codable {
-    var id: UUID = UUID()
     let userId: String
     let profile: MemberProfile?
+
+    var id: String { userId }  // Use userId as stable identifier
 
     var displayName: String { profile?.fullName ?? "Unknown" }
     var handle: String      { profile?.handle    ?? "" }

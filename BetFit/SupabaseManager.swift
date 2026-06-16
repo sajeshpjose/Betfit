@@ -68,9 +68,11 @@ final class AuthManager: NSObject, ObservableObject, ASWebAuthenticationPresenta
     // Persisted tokens
     @Published var accessToken: String? = nil
 
-    private let tokenKey   = "bf_access_token"
-    private let refreshKey = "bf_refresh_token"
+    private let tokenKey       = "bf_access_token"
+    private let refreshKey     = "bf_refresh_token"
+    private let expiresAtKey   = "bf_token_expires_at"
     private var webAuthSession: ASWebAuthenticationSession?
+    private var refreshTimer: Task<Void, Never>?
 
     var isSignedIn: Bool { user != nil }
     var userId: String? { user?.id.uuidString }
@@ -85,10 +87,81 @@ final class AuthManager: NSObject, ObservableObject, ASWebAuthenticationPresenta
         isLoading = true
         if let token = UserDefaults.standard.string(forKey: tokenKey) {
             accessToken = token
-            await fetchUser(token: token)
-            if user != nil { await ProfileManager.shared.load() }
+            // Try to refresh token if it's expired or about to expire
+            if isTokenExpired() {
+                await refreshAccessToken()
+            } else {
+                await fetchUser(token: token)
+                if user != nil { await ProfileManager.shared.load() }
+            }
+            // Schedule next refresh
+            scheduleTokenRefresh()
         }
         isLoading = false
+    }
+
+    // ── Check if access token is expired or about to expire (within 5 minutes)
+    private func isTokenExpired() -> Bool {
+        guard let expiresAt = UserDefaults.standard.double(forKey: expiresAtKey),
+              expiresAt > 0 else { return true }
+        let secondsUntilExpiry = expiresAt - Date().timeIntervalSince1970
+        return secondsUntilExpiry < 300 // Refresh if less than 5 minutes remain
+    }
+
+    // ── Refresh access token using refresh token
+    func refreshAccessToken() async {
+        guard let refreshToken = UserDefaults.standard.string(forKey: refreshKey) else {
+            clearSession()
+            return
+        }
+
+        guard let url = URL(string: "\(SUPABASE_URL)/auth/v1/token?grant_type=refresh_token") else { return }
+
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        req.setValue(SUPABASE_KEY, forHTTPHeaderField: "apikey")
+
+        let body = "grant_type=refresh_token&refresh_token=\(refreshToken)"
+        req.httpBody = body.data(using: .utf8)
+
+        do {
+            let (data, resp) = try await URLSession.shared.data(for: req)
+            if let http = resp as? HTTPURLResponse, http.statusCode == 200 {
+                let session = try JSONDecoder().decode(BFSession.self, from: data)
+                // Store new tokens and expiration time
+                UserDefaults.standard.set(session.accessToken, forKey: tokenKey)
+                UserDefaults.standard.set(session.refreshToken, forKey: refreshKey)
+                let expiresAt = Date().timeIntervalSince1970 + Double(session.expiresIn)
+                UserDefaults.standard.set(expiresAt, forKey: expiresAtKey)
+                accessToken = session.accessToken
+                // Verify user is still valid
+                await fetchUser(token: session.accessToken)
+                scheduleTokenRefresh()
+            } else {
+                clearSession()
+            }
+        } catch {
+            clearSession()
+        }
+    }
+
+    // ── Schedule token refresh before expiration
+    private func scheduleTokenRefresh() {
+        refreshTimer?.cancel()
+        guard let expiresAt = UserDefaults.standard.double(forKey: expiresAtKey),
+              expiresAt > 0 else { return }
+
+        let secondsUntilExpiry = expiresAt - Date().timeIntervalSince1970
+        // Refresh 5 minutes before expiry, or in 10 seconds if less than 5 minutes left
+        let delaySeconds = max(10, secondsUntilExpiry - 300)
+
+        refreshTimer = Task {
+            try? await Task.sleep(nanoseconds: UInt64(delaySeconds * 1_000_000_000))
+            if !Task.isCancelled {
+                await self.refreshAccessToken()
+            }
+        }
     }
 
     // ── Fetch current user using stored token
@@ -102,8 +175,10 @@ final class AuthManager: NSObject, ObservableObject, ASWebAuthenticationPresenta
             let (data, resp) = try await URLSession.shared.data(for: req)
             if let http = resp as? HTTPURLResponse, http.statusCode == 200 {
                 user = try JSONDecoder().decode(BFUser.self, from: data)
+            } else if let http = resp as? HTTPURLResponse, http.statusCode == 401 {
+                // Token is invalid — try to refresh it
+                await refreshAccessToken()
             } else {
-                // Token expired — clear it
                 clearSession()
             }
         } catch {
@@ -184,15 +259,22 @@ final class AuthManager: NSObject, ObservableObject, ASWebAuthenticationPresenta
         }
 
         guard let token = params["access_token"],
-              let refresh = params["refresh_token"] else {
+              let refresh = params["refresh_token"],
+              let expiresInStr = params["expires_in"],
+              let expiresIn = Int(expiresInStr) else {
             errorMessage = "Sign in failed — no token received."
             return
         }
 
-        // Persist tokens
+        // Persist tokens and calculate expiration time
         UserDefaults.standard.set(token, forKey: tokenKey)
         UserDefaults.standard.set(refresh, forKey: refreshKey)
+        let expiresAt = Date().timeIntervalSince1970 + Double(expiresIn)
+        UserDefaults.standard.set(expiresAt, forKey: expiresAtKey)
         accessToken = token
+
+        // Schedule next token refresh before expiration
+        scheduleTokenRefresh()
 
         // Fetch user profile then load Supabase profile data
         await fetchUser(token: token)
@@ -217,31 +299,65 @@ final class AuthManager: NSObject, ObservableObject, ASWebAuthenticationPresenta
     private func clearSession() {
         user         = nil
         accessToken  = nil
+        refreshTimer?.cancel()
+        refreshTimer = nil
         UserDefaults.standard.removeObject(forKey: tokenKey)
         UserDefaults.standard.removeObject(forKey: refreshKey)
+        UserDefaults.standard.removeObject(forKey: expiresAtKey)
     }
 
     // ── Generic authenticated GET request helper
     // Use this in other managers to query Supabase tables
     func get(path: String) async throws -> Data {
-        guard let token = accessToken,
-              let url = URL(string: "\(SUPABASE_URL)/rest/v1/\(path)") else {
+        guard let url = URL(string: "\(SUPABASE_URL)/rest/v1/\(path)") else {
             throw URLError(.badURL)
         }
+
+        // Refresh token if needed before making request
+        if isTokenExpired() {
+            await refreshAccessToken()
+        }
+
+        guard let token = accessToken else {
+            throw URLError(.badURL)
+        }
+
         var req = URLRequest(url: url)
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         req.setValue(SUPABASE_KEY, forHTTPHeaderField: "apikey")
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let (data, _) = try await URLSession.shared.data(for: req)
-        return data
+
+        do {
+            let (data, resp) = try await URLSession.shared.data(for: req)
+            if let http = resp as? HTTPURLResponse, http.statusCode == 401 {
+                // Token might have been revoked, try refreshing and retry once
+                await refreshAccessToken()
+                if let newToken = accessToken {
+                    var retryReq = req
+                    retryReq.setValue("Bearer \(newToken)", forHTTPHeaderField: "Authorization")
+                    let (retryData, _) = try await URLSession.shared.data(for: retryReq)
+                    return retryData
+                }
+            }
+            return data
+        }
     }
 
     // ── Generic authenticated POST/UPSERT helper
     func post(path: String, body: [String: Any], method: String = "POST") async throws -> Data {
-        guard let token = accessToken,
-              let url = URL(string: "\(SUPABASE_URL)/rest/v1/\(path)") else {
+        guard let url = URL(string: "\(SUPABASE_URL)/rest/v1/\(path)") else {
             throw URLError(.badURL)
         }
+
+        // Refresh token if needed before making request
+        if isTokenExpired() {
+            await refreshAccessToken()
+        }
+
+        guard let token = accessToken else {
+            throw URLError(.badURL)
+        }
+
         var req = URLRequest(url: url)
         req.httpMethod = method
         req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
@@ -249,7 +365,21 @@ final class AuthManager: NSObject, ObservableObject, ASWebAuthenticationPresenta
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.setValue("resolution=merge-duplicates", forHTTPHeaderField: "Prefer")
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
-        let (data, _) = try await URLSession.shared.data(for: req)
-        return data
+
+        do {
+            let (data, resp) = try await URLSession.shared.data(for: req)
+            if let http = resp as? HTTPURLResponse, http.statusCode == 401 {
+                // Token might have been revoked, try refreshing and retry once
+                await refreshAccessToken()
+                if let newToken = accessToken {
+                    var retryReq = req
+                    retryReq.setValue("Bearer \(newToken)", forHTTPHeaderField: "Authorization")
+                    retryReq.httpBody = try JSONSerialization.data(withJSONObject: body)
+                    let (retryData, _) = try await URLSession.shared.data(for: retryReq)
+                    return retryData
+                }
+            }
+            return data
+        }
     }
 }

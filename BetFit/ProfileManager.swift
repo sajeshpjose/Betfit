@@ -127,18 +127,22 @@ final class ProfileManager: ObservableObject {
     }
 
     // ── Save profile edits to Supabase (upsert)
-    func save(fullName: String, handle: String, company: String) async throws {
+    func save(fullName: String, handle: String, company: String, avatarURL: String? = nil) async throws {
         guard let userId = AuthManager.shared.userId else { return }
         isLoading = true
         defer { isLoading = false }
 
-        let payload: [String: Any] = [
+        var payload: [String: Any] = [
             "id":         userId,
             "full_name":  fullName,
             "handle":     handle,
             "company":    company,
             "updated_at": ISO8601DateFormatter().string(from: Date())
         ]
+
+        if let avatarURL = avatarURL {
+            payload["avatar_url"] = avatarURL
+        }
 
         _ = try await AuthManager.shared.post(
             path: "profiles?on_conflict=id",
@@ -149,6 +153,9 @@ final class ProfileManager: ObservableObject {
         self.fullName = fullName
         self.handle   = handle
         self.company  = company
+        if let avatarURL = avatarURL {
+            self.avatarURL = avatarURL
+        }
     }
 
     // ── Fetch streak, challenge count, and best finish from Supabase

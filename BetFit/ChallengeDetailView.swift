@@ -18,6 +18,11 @@ struct ChallengeDetailView: View {
         manager.leaderboards[challenge.id.uuidString] ?? []
     }
 
+    // Check if user has actually enrolled (dynamic, updates when manager changes)
+    private var userHasTeam: Bool {
+        manager.myTeams[challenge.id.uuidString] != nil
+    }
+
     var body: some View {
         ZStack(alignment: .bottom) {
             Color.bfBg.ignoresSafeArea()
@@ -76,7 +81,7 @@ struct ChallengeDetailView: View {
                         .bfCard()
 
                         // ── Your team (if enrolled)
-                        if isEnrolled {
+                        if userHasTeam {
                             YourTeamCard(challenge: challenge)
                         }
 
@@ -114,12 +119,12 @@ struct ChallengeDetailView: View {
                         .bfCard()
                     }
                     .padding(.horizontal, 16)
-                    .padding(.bottom, isEnrolled ? 40 : 120)
+                    .padding(.bottom, userHasTeam ? 40 : 120)
                 }
             }
 
             // ── Join button (only when not enrolled)
-            if !isEnrolled {
+            if !userHasTeam {
                 VStack(spacing: 0) {
                     Divider().background(Color.bfBorder)
                     BFButton(
@@ -139,7 +144,10 @@ struct ChallengeDetailView: View {
         .toolbarBackground(.visible, for: .navigationBar)
         .task {
             await manager.loadLeaderboard(for: challenge.id)
-            if isEnrolled { await manager.loadTeam(for: challenge.id) }
+            // Load team if user is already enrolled (or has just enrolled)
+            if isEnrolled || userHasTeam {
+                await manager.loadTeam(for: challenge.id)
+            }
         }
         .refreshable {
             await manager.loadLeaderboard(for: challenge.id)
@@ -147,6 +155,10 @@ struct ChallengeDetailView: View {
         .sheet(isPresented: $showEnrollSheet) {
             EnrollSheet(challenge: challenge) {
                 onEnroll()
+                // Refresh team data after successful enrollment
+                Task {
+                    await manager.loadTeam(for: challenge.id)
+                }
                 showEnrollSheet = false
             }
         }
