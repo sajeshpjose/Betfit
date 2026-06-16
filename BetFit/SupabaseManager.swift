@@ -102,8 +102,8 @@ final class AuthManager: NSObject, ObservableObject, ASWebAuthenticationPresenta
 
     // ── Check if access token is expired or about to expire (within 5 minutes)
     private func isTokenExpired() -> Bool {
-        guard let expiresAt = UserDefaults.standard.double(forKey: expiresAtKey),
-              expiresAt > 0 else { return true }
+        let expiresAt = UserDefaults.standard.double(forKey: expiresAtKey)
+        guard expiresAt > 0 else { return true }
         let secondsUntilExpiry = expiresAt - Date().timeIntervalSince1970
         return secondsUntilExpiry < 300 // Refresh if less than 5 minutes remain
     }
@@ -149,8 +149,8 @@ final class AuthManager: NSObject, ObservableObject, ASWebAuthenticationPresenta
     // ── Schedule token refresh before expiration
     private func scheduleTokenRefresh() {
         refreshTimer?.cancel()
-        guard let expiresAt = UserDefaults.standard.double(forKey: expiresAtKey),
-              expiresAt > 0 else { return }
+        let expiresAt = UserDefaults.standard.double(forKey: expiresAtKey)
+        guard expiresAt > 0 else { return }
 
         let secondsUntilExpiry = expiresAt - Date().timeIntervalSince1970
         // Refresh 5 minutes before expiry, or in 10 seconds if less than 5 minutes left
